@@ -36,26 +36,9 @@ void Solution::evaluate() {
     // RESTRICCION 1: Accesibilidad (Segun el Informe/Paper)
     // x_i + x_j >= 1 para todo (i,j) en \bar{E}
     
-    // NOTA: AQUI SE PODRIA PROGRAMAR LA RESTRICCIÓN RELAJADA DEL AYUDANTE DE ESTA MANERA:
-    /*
-    for (int i = 0; i < n; ++i) {
-        if (chromosome[i] == 1) { // Si decido construir...
-            bool connected = false;
-            for (int j = 0; j < n; ++j) {
-                // Busco si hay al menos otra estacion construida en el rango R
-                if (i != j && instance->dist_matrix[i][j] <= instance->R && chromosome[j] == 1) {
-                    connected = true; 
-                    break;
-                }
-            }
-            if (!connected) {
-                penalty += penalty_weight; // Penalizo porque quedo aislada
-            }
-        }
-    }
-    */
+    // NOTA: AQUI SE PODRIA PROGRAMAR LA RESTRICCIÓN RELAJADA
     
-    // Pero lo programamos tal cual esta en tu informe (modo estricto):
+    // Pero lo programamos tal cual esta en el paper quatum simulated annealing
     for (int i = 0; i < n; ++i) {
         for (int j = i + 1; j < n; ++j) {
             if (instance->isValidEdge(i, j)) { // Distancia entre alpha*R y R
