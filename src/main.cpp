@@ -52,6 +52,9 @@ int main(int argc, char* argv[]) {
         }
     }
     cout << endl;
+    int built = 0;
+    for (int x : ga.best_solution.chromosome) built += x;
+    cout << "Nodos construidos: " << built << "/" << instance.n_nodes << endl;
     cout << "========================================" << endl;
 
     return 0;

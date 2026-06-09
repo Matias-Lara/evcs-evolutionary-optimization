@@ -600,7 +600,7 @@ if (best.fitness < best_solution.fitness)
 \begin{frame}[fragile]{Salida del Programa}
   \begin{columns}[T]
     \column{0.50\textwidth}
-    \textbf{Código de salida (\texttt{main.cpp}):}
+    {\small\textbf{Código de salida (\texttt{main.cpp}):}}
     \begin{lstlisting}
 cout << "--- MEJOR SOLUCION ENCONTRADA ---\n";
 cout << "Fitness Total: "
@@ -618,20 +618,23 @@ for (size_t i = 0;
     cout << i; first = false;
   }
 cout << endl;
+int built = 0;
+for (int x : ga.best_solution.chromosome)
+  built += x;
+cout << "Nodos construidos: " << built
+     << "/" << instance.n_nodes << endl;
     \end{lstlisting}
-    \textbf{Compilación y ejecución:}
+
+    \column{0.48\textwidth}
+    {\small\textbf{Compilación y ejecución:}}
     \begin{lstlisting}[language=bash,numbers=none]
 $ make
 $ ./evcs_solver EVCS_Instancias/\
   Instancias_pequenas/evcsSmall_N10_A0_S51.txt
     \end{lstlisting}
-
-    \column{0.48\textwidth}
-    \textbf{Ejemplo de salida (N=10, instancia S51):}
+    {\small\textbf{Ejemplo de salida (N=10, instancia S51):}}
     \begin{lstlisting}[language={},numbers=none]
 ========================================
-Instancia cargada:
-  evcsSmall_N10_A0_S51.txt
 Nodos: 10 | Area Ciudad: 100
 ========================================
 --- MEJOR SOLUCION ENCONTRADA ---
@@ -641,10 +644,10 @@ Penalizacion: 0
 ----------------------------------------
 Estaciones construidas en los nodos:
 1, 2, 3, 4, 5, 6, 7, 8, 9
+Nodos construidos: 9/10
 ========================================
     \end{lstlisting}
-    \vspace{0.15em}
-    \acento{\textbf{Estado actual:}} \footnotesize Funciona con \textbf{penalidad = 0} (factible) en todas las instancias pequeñas.
+    {\scriptsize\acento{\textbf{Estado:}} \textbf{Penalidad 0} (factible) en instancias pequeñas.}
   \end{columns}
 \end{frame}
 

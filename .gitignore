@@ -1,6 +1,8 @@
 # Binarios compilados
 *.o
 *.a
+
+# Varios
 *.xlsx
 evcs_solver
 
@@ -25,6 +27,7 @@ evcs_solver
 .vscode/
 *.swp
 *~
+.claude/
 
 # OS
 .DS_Store
