@@ -34,7 +34,7 @@ public:
     Instance(const string& filename);
     
     // Funcion de ayuda matematica: verifica si un par de nodos (i, j) 
-    // pertenece al conjunto de aristas validas (\bar{E}) segun el paper
+    // pertenece al conjunto de aristas validas E segun el paper
     bool isValidEdge(int i, int j) const;
 };
 

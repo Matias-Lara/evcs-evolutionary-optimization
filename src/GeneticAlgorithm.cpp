@@ -21,7 +21,7 @@ void GeneticAlgorithm::initializePopulation() {
     population.clear();
     for (int i = 0; i < pop_size; ++i) {
         Solution sol(instance);
-        sol.randomize();
+        sol.randomize(rng);
         sol.evaluate();
         population.push_back(sol);
         

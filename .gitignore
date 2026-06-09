@@ -1,1 +1,31 @@
+# Binarios compilados
+*.o
+*.a
+*.xlsx
+evcs_solver
+
+# LaTeX auxiliares
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+
+# PDFs generados (no subir, se regeneran con pdflatex)
 *.pdf
+
+# Editor
+.vscode/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db

@@ -10,9 +10,10 @@ Solution::Solution(const Instance* inst) : instance(inst) {
     fitness = 0;
 }
 
-void Solution::randomize() {
+void Solution::randomize(mt19937& rng) {
+    uniform_int_distribution<int> bit(0, 1);
     for (int i = 0; i < instance->n_nodes; ++i) {
-        chromosome[i] = rand() % 2; // Arroja 0 o 1 aleatoriamente
+        chromosome[i] = bit(rng); // Arroja 0 o 1 aleatoriamente
     }
     evaluate();
 }
@@ -38,7 +39,7 @@ void Solution::evaluate() {
     
     // NOTA: AQUI SE PODRIA PROGRAMAR LA RESTRICCIÓN RELAJADA
     
-    // Pero lo programamos tal cual esta en el paper quatum simulated annealing
+    // Programamos tal cual esta en el paper quatum simulated annealing
     for (int i = 0; i < n; ++i) {
         for (int j = i + 1; j < n; ++j) {
             if (instance->isValidEdge(i, j)) { // Distancia entre alpha*R y R

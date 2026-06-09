@@ -1,0 +1,716 @@
+\documentclass[aspectratio=169, 12pt]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, shapes.geometric, positioning, calc}
+\usepackage{listings}
+\usepackage{microtype}
+
+\usepackage[sfdefault, light]{FiraSans}
+\usepackage[lining]{FiraMono}
+\renewcommand{\familydefault}{\sfdefault}
+
+\usetheme[progressbar=frametitle, numbering=fraction, block=fill]{metropolis}
+
+\definecolor{NavyBg}    {RGB}{13,  18,  38}
+\definecolor{NavyFrame} {RGB}{20,  28,  60}
+\definecolor{Cian}      {RGB}{0,  188, 212}
+\definecolor{Verde}     {RGB}{0,  230, 118}
+\definecolor{BlancoCool}{RGB}{220,230,255}
+\definecolor{GrisAzul}  {RGB}{140,160,210}
+\definecolor{CodeBg}    {RGB}{28,  36,  70}
+\definecolor{AlertRed}  {RGB}{255,  82,  82}
+
+\setbeamercolor{normal text}         {fg=BlancoCool, bg=NavyBg}
+\setbeamercolor{background canvas}   {bg=NavyBg}
+\setbeamercolor{frametitle}          {fg=Verde, bg=NavyFrame}
+\setbeamercolor{progress bar}        {fg=Cian, bg=NavyFrame}
+\setbeamercolor{title separator}     {fg=Cian}
+\setbeamercolor{structure}           {fg=Cian}
+\setbeamercolor{alerted text}        {fg=Verde}
+\setbeamercolor{block title}         {fg=Verde, bg=CodeBg}
+\setbeamercolor{block body}          {fg=BlancoCool, bg=NavyFrame}
+\setbeamercolor{block title example} {fg=Cian, bg=CodeBg}
+\setbeamercolor{block body example}  {fg=BlancoCool, bg=NavyFrame}
+\setbeamercolor{itemize item}        {fg=Verde}
+\setbeamercolor{itemize subitem}     {fg=Cian}
+\setbeamercolor{enumerate item}      {fg=Verde}
+\setbeamercolor{title}               {fg=Verde}
+\setbeamercolor{subtitle}            {fg=Cian}
+\setbeamercolor{author}              {fg=GrisAzul}
+\setbeamercolor{date}                {fg=GrisAzul}
+\setbeamercolor{section in toc}      {fg=BlancoCool}
+
+\setbeamerfont{frametitle}{size=\large, series=\bfseries}
+\setbeamerfont{title}     {size=\Large, series=\bfseries}
+\setbeamerfont{block title}{size=\small, series=\bfseries}
+
+\lstset{
+  language        = C++,
+  basicstyle      = \ttfamily\tiny\color{BlancoCool},
+  keywordstyle    = \color{Cian}\bfseries,
+  commentstyle    = \color{GrisAzul}\itshape,
+  stringstyle     = \color{Verde},
+  numberstyle     = \tiny\color{GrisAzul},
+  backgroundcolor = \color{CodeBg},
+  frame           = single,
+  rulecolor       = \color{Cian!40},
+  numbers         = left,
+  numbersep       = 4pt,
+  breaklines      = true,
+  showstringspaces= false,
+  tabsize         = 2,
+  xleftmargin     = 1.2em,
+  framexleftmargin= 0.8em,
+  morekeywords    = {vector, string, size_t, mt19937},
+}
+
+\newcommand{\acento}[1]{\textcolor{Verde}{\textbf{#1}}}
+\newcommand{\acentob}[1]{\textcolor{Cian}{#1}}
+\newcommand{\gris}[1]{\textcolor{GrisAzul}{#1}}
+
+\title{EVCSPP: Optimización Evolutiva de\\Estaciones de Carga para VE}
+\subtitle{Estado de Avance --- Presentación 1}
+\author{Matias Lara Plaza}
+\institute{Inteligencia Artificial $\cdot$ 2026-1}
+\date{Junio 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{frame}{Contenido}
+  \setbeamertemplate{section in toc}[sections numbered]
+  \tableofcontents
+\end{frame}
+
+% ============================================================
+\section{Contexto y Problema}
+% ============================================================
+
+\begin{frame}{El Problema: EVCSPP}
+  \begin{columns}
+    \column{0.55\textwidth}
+    \begin{itemize}
+      \item Los VE reducen emisiones de CO$_2$, pero generan \alert{``range anxiety''}
+      \item Solución: red de estaciones \textbf{estratégicamente ubicada}
+      \item \textbf{EVCSPP}: elegir \emph{qué nodos} alojan estaciones, minimizando costo total
+    \end{itemize}
+    \vspace{0.3em}
+    \begin{block}{Complejidad}
+      Formalmente \alert{NP-duro} \gris{[Lam et al., 2014]}. Para $n$ ubicaciones candidatas existen $2^n$ soluciones posibles.
+    \end{block}
+    \column{0.42\textwidth}
+    \begin{center}
+    \begin{tikzpicture}[scale=0.9,
+      nodo/.style    ={circle,draw=GrisAzul,fill=NavyFrame,text=BlancoCool,minimum size=0.65cm,font=\scriptsize},
+      estacion/.style={circle,draw=Verde,fill=Verde!20,text=BlancoCool,minimum size=0.65cm,font=\scriptsize,line width=1.5pt}]
+      \node[nodo]     (A) at (0,2.0){A};
+      \node[estacion] (B) at (2,2.8){B};
+      \node[nodo]     (C) at (3.2,1.2){C};
+      \node[estacion] (D) at (0.8,0) {D};
+      \node[estacion] (E) at (3.5,2.8){E};
+      \node[nodo]     (F) at (0.3,3.3){F};
+      \foreach \u/\v in {A/B,B/C,C/E,A/D,D/C,B/E,F/B,F/A}
+        \draw[GrisAzul,thin] (\u)--(\v);
+      \node[Verde,font=\tiny]    at (1.8,-0.55){\acento{Estaciones seleccionadas}};
+      \node[GrisAzul,font=\tiny] at (1.8,-0.95){No seleccionados};
+    \end{tikzpicture}
+    \end{center}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Modelo Matemático \gris{(Ou et al., 2025)}}
+  \begin{columns}
+    \column{0.50\textwidth}
+    \textbf{Variable de decisión:}
+    \[
+      x_j = \begin{cases}1 & \text{construir estación en }j\\0 & \text{caso contrario}\end{cases}
+    \]
+    \vspace{0.1em}
+    \textbf{Función objetivo:}
+    \[
+      \min \sum_{j=1}^{n} C_j \cdot x_j
+    \]
+    \acentob{$C_j$}: costo de construcción en $j$
+    \column{0.48\textwidth}
+    \textbf{Restricciones:}
+    \vspace{0.2em}
+    \begin{enumerate}
+      \item[\acento{R1}] \textbf{Accesibilidad}\\
+        $x_i + x_j \geq 1 \;\forall(i,j)\in\bar{E}$
+      \vspace{0.2em}
+      \item[\acento{R2}] \textbf{Demanda}\\
+        $\displaystyle\sum_{i\in V_j^{\alpha R}} f_i x_i \geq D_j$
+      \vspace{0.2em}
+      \item[\acento{R3}] \textbf{Cobertura urbana}\\
+        $\displaystyle\sum_{j} s_j x_j \geq \textit{CityArea}$
+      \vspace{0.2em}
+      \item[\acento{R4}] \textbf{Zonas remotas}\\
+        $\displaystyle\sum_{j\in T} x_j \geq 1$
+    \end{enumerate}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+\section{Representación y Restricciones}
+% ============================================================
+
+\begin{frame}[fragile]{Representación: Cromosoma Binario}
+  \begin{columns}[T]
+    \column{0.47\textwidth}
+    \textbf{Una solución = vector binario de longitud $n$:}
+    \vspace{0.15em}
+    \begin{center}
+    \begin{tikzpicture}[scale=0.80]
+      \foreach \i/\v/\col in {0/1/Verde,1/0/GrisAzul,2/0/GrisAzul,3/1/Verde,4/1/Verde,5/0/GrisAzul}{
+        \node[draw=Cian!60,fill=CodeBg,minimum width=0.70cm,minimum height=0.65cm,text=\col,font=\small\bfseries]
+          at (\i*0.83,0) {\v};
+        \node[font=\tiny,GrisAzul] at (\i*0.83,-0.46){$j{=}\i$};
+      }
+      \draw[<-,Verde,thick] (0,0.38)--++(0,0.32) node[above,font=\tiny,Verde]{construir};
+    \end{tikzpicture}
+    \end{center}
+    \vspace{0.1em}
+    \begin{itemize}
+      \item Longitud = \texttt{n\_nodes} (de la instancia)
+      \item Homogéneo, sin orden implícito
+      \item Compatible con GA binario estándar
+    \end{itemize}
+
+    \column{0.51\textwidth}
+    \textbf{Implementación (\texttt{Solution.h}):}
+    \begin{lstlisting}
+class Solution {
+public:
+  // Cromosoma: 1=construir, 0=no
+  vector<int> chromosome;
+
+  const Instance* instance;
+
+  double cost;    // costo real
+  double penalty; // suma penalidades
+  double fitness; // cost + penalty
+
+  Solution(const Instance* inst);
+  void evaluate();            // calcula fitness
+  void randomize(mt19937&);   // sol. inicial
+};
+    \end{lstlisting}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Manejo de Restricciones: Penalidades}
+  \begin{columns}[T]
+    \column{0.46\textwidth}
+    \vspace{0.1em}
+    \textbf{Estrategia:} restricciones $\rightarrow$ penalidades aditivas
+    {\setlength\abovedisplayskip{3pt}\setlength\belowdisplayskip{3pt}
+    \[
+      \text{fitness} =
+        \underbrace{\sum_{j:\,x_j=1}C_j}_{\text{costo base}}
+        + \underbrace{\lambda\sum_k\delta_k}_{\text{penalidades}}
+    \]
+    }
+    Con $\lambda = 10^9 \gg$ cualquier costo real.
+    \vspace{0.1em}
+    \begin{block}{Por qué funciona}
+      \begin{itemize}\footnotesize
+        \item Infactible $\Rightarrow$ fitness $\gg$ factible
+        \item No se eliminan infactibles
+        \item R2: penalidad proporcional al déficit
+      \end{itemize}
+    \end{block}
+
+    \column{0.52\textwidth}
+    \begin{lstlisting}
+void Solution::evaluate() {
+  double W = 1e9;
+  cost = 0; penalty = 0;
+  int n = instance->n_nodes;
+
+  for (int i=0; i<n; ++i) // costo base
+    if (chromosome[i])
+      cost += instance->nodes[i].cost;
+
+  // R1: Accesibilidad
+  for (int i=0; i<n; ++i)
+    for (int j=i+1; j<n; ++j)
+      if (instance->isValidEdge(i,j))
+        if (!chromosome[i]&&!chromosome[j])
+          penalty += W;
+
+  // R2: Demanda (proporcional al deficit)
+  for (int j=0; j<n; ++j) {
+    double cap = 0;
+    for (int i=0; i<n; ++i)
+      if ((i==j||instance->isValidEdge(i,j))
+          && chromosome[i])
+        cap += instance->nodes[i].capacity;
+    if (cap < instance->nodes[j].demand)
+      penalty += W*(instance->nodes[j].demand-cap);
+  }
+  // R3, R4 de forma similar...
+  fitness = cost + penalty;
+}
+    \end{lstlisting}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+\section{Lectura de Instancias}
+% ============================================================
+
+\begin{frame}[fragile]{Lectura y Almacenamiento de Instancias}
+  \begin{columns}[T]
+    \column{0.44\textwidth}
+    \textbf{Formato del archivo \texttt{.txt}:}
+    \begin{lstlisting}[language={},numbers=none]
+n_nodos R alpha CityArea
+6 250 0.05 100
+ID Costo Demanda Potencia Rango Remoto
+0  3258492 3227 2766 24 0
+1  2630136  132 1267 79 1
+...
+Matriz_Distancias
+-1.00  5.20  8.42 ...
+ 5.20 -1.00  6.78 ...
+Coordenadas
+2.509  1.909
+0.461  6.685
+    \end{lstlisting}
+    \vspace{-0.1em}
+    \textbf{Conjuntos de instancias:}
+    \begin{itemize}\footnotesize
+      \item \acento{Pequeñas}: $N\in\{6,8,10\}$ (15 inst.)
+      \item \acentob{Grandes}: $N\in\{100,200,300\}$ (15 inst.)
+      \item \gris{Real}: $N=100$, datos reales (5 inst.)
+    \end{itemize}
+
+    \column{0.54\textwidth}
+    \textbf{Estructura interna (\texttt{Instance.h}):}
+    \begin{lstlisting}
+struct Node {
+  int    id;
+  double cost;          // C_j
+  double demand;        // D_j
+  double capacity;      // f_i
+  double service_range; // s_j
+  int    is_remote;     // pertenece a T
+  double x, y;
+};
+
+class Instance {
+public:
+  int    n_nodes;
+  double R, alpha, city_area;
+
+  vector<Node>           nodes;
+  vector<vector<double>> dist_matrix;
+
+  Instance(const string& filename);
+  bool isValidEdge(int i, int j) const;
+};
+    \end{lstlisting}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+\section{Algoritmo Genético}
+% ============================================================
+
+\begin{frame}[fragile]{Solución Inicial: Generación Aleatoria}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+    \textbf{¿Por qué aleatoria?}
+    \begin{itemize}\footnotesize
+      \item Máxima \alert{diversidad} en la población inicial
+      \item Sin sesgo que limite la exploración
+      \item El GA converge desde cualquier punto de partida
+    \end{itemize}
+    \vspace{0.05em}
+    \textbf{Proceso:}
+    \begin{enumerate}\footnotesize
+      \item Cada gen: bit aleatorio $\in \{0,1\}$ (\texttt{mt19937})
+      \item Evaluar la solución generada
+      \item Repetir para \texttt{pop\_size} = 50 individuos
+    \end{enumerate}
+
+    \column{0.48\textwidth}
+    \begin{lstlisting}
+// Genera un individuo aleatorio
+void Solution::randomize(mt19937& rng) {
+  uniform_int_distribution<int> bit(0, 1);
+  for (int i = 0;
+       i < instance->n_nodes; ++i)
+    chromosome[i] = bit(rng);
+  evaluate();
+}
+
+// Inicializa toda la poblacion
+void GeneticAlgorithm::
+    initializePopulation() {
+  population.clear();
+  for (int i = 0; i < pop_size; ++i) {
+    Solution sol(instance);
+    sol.randomize(rng); // gen aleatorio
+    population.push_back(sol);
+    if (sol.fitness < best_solution.fitness)
+      best_solution = sol;
+  }
+}
+    \end{lstlisting}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{El Algoritmo Genético: Flujo Completo}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+    \begin{block}{Parámetros implementados}
+      \begin{tabular}{ll}
+        \acentob{pop\_size}        & 50 individuos \\
+        \acentob{crossover\_rate}  & 0.8           \\
+        \acentob{mutation\_rate}   & 0.05 por gen  \\
+        \acentob{max\_generations} & 100           \\
+      \end{tabular}
+    \end{block}
+    \vspace{0.3em}
+    \textbf{Ciclo por generación:}
+    \begin{enumerate}
+      \item \alert{Preservar el mejor} (Elitismo)
+      \item Seleccionar padres (Ruleta)
+      \item Cruzar padres (Cruce Uniforme)
+      \item Mutar hijos (Bit-flip)
+      \item Reemplazar generación completa
+    \end{enumerate}
+
+    \column{0.45\textwidth}
+    \begin{center}
+    \begin{tikzpicture}[
+      scale=0.78,
+      caja/.style ={draw=Cian!60,fill=CodeBg,text=BlancoCool,
+                    rounded corners=3pt,minimum width=4.3cm,
+                    minimum height=0.52cm,font=\scriptsize,align=center},
+      cajae/.style={draw=Verde,fill=Verde!60,text=NavyBg,
+                    rounded corners=3pt,minimum width=4.3cm,
+                    minimum height=0.52cm,font=\scriptsize\bfseries,align=center},
+      fl/.style   ={-Stealth,GrisAzul,thick}]
+      \node[caja]  (ini)   at (0, 5.0){Poblar con \texttt{randomize()}};
+      \node[caja]  (eval)  at (0, 4.1){Evaluar fitness de la población};
+      \node[cajae] (elit)  at (0, 3.2){Elitismo: copiar el mejor directo};
+      \node[caja]  (sel)   at (0, 2.3){Selección por Ruleta ($\times$2)};
+      \node[caja]  (cross) at (0, 1.4){Cruce Uniforme ($p_c = 0.8$)};
+      \node[caja]  (mut)   at (0, 0.5){Mutación Bit-flip ($p_m = 0.05$)};
+      \node[caja]  (rep)   at (0,-0.4){Reemplazar generación};
+      \foreach \a/\b in {ini/eval,eval/elit,elit/sel,sel/cross,cross/mut,mut/rep}
+        \draw[fl] (\a)--(\b);
+      \draw[-Stealth,Cian,thick]
+        (rep.east)--++(0.65,0)--++(0,4.6)--(eval.east)
+        node[midway,right,font=\tiny,Cian]{100\,gen.};
+    \end{tikzpicture}
+    \end{center}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+\section{Movimientos del GA}
+% ============================================================
+
+\begin{frame}[fragile]{Movimiento I: Selección por Ruleta}
+  Adaptada a \textbf{minimización} invirtiendo el fitness:
+  {\setlength\abovedisplayskip{3pt}\setlength\belowdisplayskip{3pt}
+  \[
+    \tilde{f}_i = (\max_k f_k - f_i) + 1
+    \qquad
+    P(\text{seleccionar }i) = \frac{\tilde{f}_i}{\sum_k \tilde{f}_k}
+  \]
+  }
+  \vspace{-0.5em}
+  \begin{columns}[T]
+    \column{0.40\textwidth}
+    \begin{center}
+    \begin{tikzpicture}[scale=0.65]
+      \fill[Verde!55]    (0,0)--(2,0) arc(0:130:2)  --cycle;
+      \fill[Cian!55]     (0,0)--(2,0) arc(0:-90:2)  --cycle;
+      \fill[GrisAzul!40] (0,0)--({2*cos(270)},{2*sin(270)}) arc(270:180:2)--cycle;
+      \fill[AlertRed!30] (0,0)--({2*cos(130)},{2*sin(130)}) arc(130:180:2)--cycle;
+      \node[font=\scriptsize,Verde]    at ( 0.6, 0.9){A (mejor)};
+      \node[font=\scriptsize,Cian]     at ( 0.7,-0.7){B};
+      \node[font=\scriptsize,GrisAzul] at (-0.9,-0.5){C};
+      \node[font=\scriptsize,AlertRed] at (-0.7, 0.5){D};
+    \end{tikzpicture}
+    \end{center}
+    \vspace{0.1em}
+    El \acento{mejor individuo} ocupa el mayor sector.
+
+    \column{0.58\textwidth}
+    \begin{lstlisting}
+Solution GA::rouletteWheelSelection() {
+  double max_f = 0;
+  for (auto& s : population)
+    if (s.fitness > max_f) max_f = s.fitness;
+  double total = 0;
+  vector<double> inv(pop_size);
+  for (int i = 0; i < pop_size; ++i) {
+    inv[i] = (max_f - population[i].fitness) + 1.0;
+    total += inv[i];
+  }
+  uniform_real_distribution<> d(0.0, total);
+  double r = d(rng), acc = 0;
+  for (int i = 0; i < pop_size; ++i) {
+    acc += inv[i];
+    if (acc >= r) return population[i];
+  }
+  return population.back();
+}
+    \end{lstlisting}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Movimiento II: Cruce Uniforme}
+  Cada gen del hijo elige de qué padre heredar con $p=0.5$, de forma \textbf{independiente}:
+  \vspace{0.2em}
+  \begin{center}
+  \begin{tikzpicture}[scale=0.85]
+    \foreach \i/\v in {0/1,1/0,2/1,3/0,4/1,5/0}
+      \node[draw=Cian!60,fill=CodeBg,minimum size=0.65cm,font=\small,text=BlancoCool]
+        at (\i*0.83,1.15) {\v};
+    \node[Cian,font=\scriptsize] at (-0.95,1.15){Padre 1};
+    \foreach \i/\v in {0/0,1/1,2/0,3/1,4/0,5/1}
+      \node[draw=GrisAzul!60,fill=CodeBg,minimum size=0.65cm,font=\small,text=BlancoCool]
+        at (\i*0.83,0.48) {\v};
+    \node[GrisAzul,font=\scriptsize] at (-0.95,0.48){Padre 2};
+    \draw[-Stealth,Cian,thick]     (0*0.83,0.84)--(0*0.83,0.07);
+    \draw[-Stealth,GrisAzul,thick] (1*0.83,0.17)--(1*0.83,0.07);
+    \draw[-Stealth,GrisAzul,thick] (2*0.83,0.17)--(2*0.83,0.07);
+    \draw[-Stealth,Cian,thick]     (3*0.83,0.84)--(3*0.83,0.07);
+    \draw[-Stealth,Cian,thick]     (4*0.83,0.84)--(4*0.83,0.07);
+    \draw[-Stealth,GrisAzul,thick] (5*0.83,0.17)--(5*0.83,0.07);
+    \foreach \i/\v in {0/1,1/1,2/0,3/0,4/1,5/1}
+      \node[draw=Verde,fill=Verde,minimum size=0.65cm,font=\small\bfseries,text=NavyBg]
+        at (\i*0.83,-0.28) {\v};
+    \node[Verde,font=\scriptsize] at (-0.95,-0.28){Hijo 1};
+  \end{tikzpicture}
+  \end{center}
+  \vspace{0.15em}
+  \begin{lstlisting}[numbers=none]
+for (size_t i = 0; i < parent1.chromosome.size(); ++i) {
+  if (dist(rng) < 0.5) {                    // Intercambiar genes
+    child1.chromosome[i] = parent2.chromosome[i];
+    child2.chromosome[i] = parent1.chromosome[i];
+  } else {                                   // Heredar directo
+    child1.chromosome[i] = parent1.chromosome[i];
+    child2.chromosome[i] = parent2.chromosome[i];
+  }
+}
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Movimiento III: Mutación Bit-flip y Elitismo}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+    \textbf{\acentob{Mutación Bit-flip} ($p_m = 0.05$)}\\[0.2em]
+    Cada gen se niega \emph{independientemente} con probabilidad $p_m$:
+    \vspace{0.15em}
+    \begin{center}
+    \begin{tikzpicture}[scale=0.82]
+      \foreach \i/\v in {0/1,1/0,2/0,3/1,4/1}
+        \node[draw=Cian!60,fill=CodeBg,minimum size=0.62cm,font=\small,text=BlancoCool]
+          at (\i*0.78,0.60) {\v};
+      \node[GrisAzul,font=\tiny] at (-0.62,0.60){Antes:};
+      \node[draw=Cian!60,fill=CodeBg,minimum size=0.62cm,font=\small,text=BlancoCool] at (0*0.78,0) {1};
+      \node[draw=Cian!60,fill=CodeBg,minimum size=0.62cm,font=\small,text=BlancoCool] at (1*0.78,0) {0};
+      \node[draw=Verde,fill=Verde,minimum size=0.62cm,font=\small\bfseries,text=NavyBg] at (2*0.78,0) {1};
+      \node[draw=Cian!60,fill=CodeBg,minimum size=0.62cm,font=\small,text=BlancoCool] at (3*0.78,0) {1};
+      \node[draw=Verde,fill=Verde,minimum size=0.62cm,font=\small\bfseries,text=NavyBg] at (4*0.78,0) {0};
+      \node[GrisAzul,font=\tiny] at (-0.62,0){Después:};
+      \draw[-Stealth,Verde,thick] (2*0.78,0.31)--(2*0.78,0.16);
+      \draw[-Stealth,Verde,thick] (4*0.78,0.31)--(4*0.78,0.16);
+      \node[Verde,font=\tiny] at (2*0.78,-0.37){flip!};
+      \node[Verde,font=\tiny] at (4*0.78,-0.37){flip!};
+    \end{tikzpicture}
+    \end{center}
+    \begin{lstlisting}[numbers=none]
+for (size_t i = 0; i < sol.chromosome.size(); ++i)
+  if (dist(rng) < mutation_rate)
+    sol.chromosome[i] = 1 - sol.chromosome[i];
+    \end{lstlisting}
+
+    \column{0.48\textwidth}
+    \textbf{\acento{Elitismo} (1-best)}\\[0.2em]
+    El mejor de la generación $g$ \textbf{pasa directo} a $g{+}1$:
+    \begin{lstlisting}[numbers=none]
+// Mejor de la generacion actual
+Solution best = population[0];
+for (auto& sol : population)
+  if (sol.fitness < best.fitness)
+    best = sol;
+
+// Sobrevive intacto
+new_population.push_back(best);
+
+// Actualizar record global
+if (best.fitness < best_solution.fitness)
+  best_solution = best;
+    \end{lstlisting}
+    \vspace{0.2em}
+    \textbf{Garantía:} el fitness de la mejor solución global \textbf{nunca empeora} entre generaciones.
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Justificación del Diseño}
+  \begin{center}
+  \renewcommand{\arraystretch}{1.05}
+  \footnotesize
+  \begin{tabular}{p{2.3cm} p{3.9cm} p{3.9cm}}
+    \toprule
+    \acentob{Componente} & \acento{Motivación} & \gris{Objetivo} \\
+    \midrule
+    Ruleta invertida &
+      Presión selectiva proporcional al fitness; no monopoliza &
+      Favorecer los mejores sin perder diversidad \\
+    Cruce Uniforme &
+      Mayor mezcla que cruce de 1 punto; sin sesgo posicional &
+      Exploración amplia del espacio combinatorio \\
+    Bit-flip ($p_m{=}0.05$) &
+      Perturbación mínima y localizada por gen &
+      Escapar óptimos locales sin destruir buenas soluciones \\
+    Elitismo 1-best &
+      El mejor de cada generación siempre sobrevive &
+      El resultado nunca empeora entre generaciones \\
+    Penalidad $\lambda{=}10^9$ &
+      $\lambda \gg$ cualquier costo real &
+      Infactibles siempre peores que factibles \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+% ============================================================
+\section{Resultados y Salida}
+% ============================================================
+
+\begin{frame}[fragile]{Salida del Programa}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+    \textbf{Código de salida (\texttt{main.cpp}):}
+    \begin{lstlisting}
+cout << "--- MEJOR SOLUCION ENCONTRADA ---\n";
+cout << "Fitness Total: "
+     << ga.best_solution.fitness << endl;
+cout << "Costo Base: "
+     << ga.best_solution.cost << endl;
+cout << "Penalizacion: "
+     << ga.best_solution.penalty << endl;
+cout << "Estaciones construidas en los nodos: ";
+bool first = true;
+for (size_t i = 0;
+     i < ga.best_solution.chromosome.size(); ++i)
+  if (ga.best_solution.chromosome[i] == 1) {
+    if (!first) cout << ", ";
+    cout << i; first = false;
+  }
+cout << endl;
+    \end{lstlisting}
+    \textbf{Compilación y ejecución:}
+    \begin{lstlisting}[language=bash,numbers=none]
+$ make
+$ ./evcs_solver EVCS_Instancias/\
+  Instancias_pequenas/evcsSmall_N10_A0_S51.txt
+    \end{lstlisting}
+
+    \column{0.48\textwidth}
+    \textbf{Ejemplo de salida (N=10, instancia S51):}
+    \begin{lstlisting}[language={},numbers=none]
+========================================
+Instancia cargada:
+  evcsSmall_N10_A0_S51.txt
+Nodos: 10 | Area Ciudad: 100
+========================================
+--- MEJOR SOLUCION ENCONTRADA ---
+Fitness Total: 1.36929e+07
+Costo Base: 1.36929e+07
+Penalizacion: 0
+----------------------------------------
+Estaciones construidas en los nodos:
+1, 2, 3, 4, 5, 6, 7, 8, 9
+========================================
+    \end{lstlisting}
+    \vspace{0.15em}
+    \acento{\textbf{Estado actual:}} \footnotesize Funciona con \textbf{penalidad = 0} (factible) en todas las instancias pequeñas.
+  \end{columns}
+\end{frame}
+
+% ============================================================
+\section{Conclusiones y Trabajo Futuro}
+% ============================================================
+
+\begin{frame}{Conclusiones y Trabajo Futuro}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+    \acento{Lo logrado}
+    \begin{itemize}\footnotesize
+      \item[\acento{\checkmark}] GA completo en C++: Ruleta, Cruce Uniforme, Bit-flip y Elitismo
+      \item[\acento{\checkmark}] 4 restricciones manejadas por penalidades ($\lambda = 10^9$)
+      \item[\acento{\checkmark}] Resuelve instancias pequeñas ($N{=}6,8,10$) encontrando soluciones factibles
+    \end{itemize}
+
+    \vspace{0.1em}
+    \acentob{Desafío central}
+    \begin{itemize}\footnotesize
+      \item EVCSPP es NP-duro: sin garantía de optimalidad global
+      \item En instancias grandes, el balance exploración/explotación es crítico
+    \end{itemize}
+
+    \column{0.48\textwidth}
+    \acentob{Trabajo Futuro}
+    \begin{itemize}\footnotesize
+      \item[\acentob{$\to$}] Ajustar hiperparámetros ($p_m$, $p_c$, tamaño de población) en experimentos sistemáticos
+      \item[\acentob{$\to$}] Correr instancias grandes ($N{=}100,200,300$) y datos reales
+      \item[\acentob{$\to$}] Inicialización \textbf{greedy} para comparar si mejora o empeora el resultado versus aleatoria
+      \item[\acentob{$\to$}] Variar $\alpha$: actualmente fuerza muchas aristas válidas. Aumentarlo da \textbf{más flexibilidad} al modelo y puede reducir costos al no obligar a construir en la mayoría de nodos
+    \end{itemize}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Referencias}
+  \begin{enumerate}\small
+    \item \textcolor{BlancoCool}{C.-H. Ou, C.-C. Cheng, C.-Y. Chen, K. Bhumkittipich, S. Romphochai.}
+      \gris{``Solving Optimal EV Charging Station Placement Problem Using Digital Quantum Annealing.''}
+      \textit{J. Comm. and Networks}, 27(4):252--263, \textbf{2025.}
+      \hfill\acento{[Paper base]}
+
+    \vspace{0.3em}
+    \item \textcolor{BlancoCool}{A.~Y.~S. Lam, Y.-W. Leung, X. Chu.}
+      \gris{``EV Charging Station Placement: Formulation, Complexity, and Solutions.''}
+      \textit{IEEE Trans. Smart Grid}, 5(6):2846--2856, \textbf{2014.}
+      \hfill\acentob{[Formulación]}
+
+    \vspace{0.3em}
+    \item \textcolor{BlancoCool}{H.~K. Demiryürek, B. Bozali, A. Ozturk.}
+      \gris{``Optimal Placement and Cost Analysis of EV Charging Stations Using Metaheuristic Optimization.''}
+      \textit{Applied Sciences}, 15(21), \textbf{2025.}
+
+    \vspace{0.3em}
+    \item \textcolor{BlancoCool}{S. Basu, M. Sharma, P.~S. Ghosh.}
+      \gris{``Metaheuristic Applications on Discrete Facility Location Problems: A Survey.''}
+      \textit{Opsearch}, 52(3):530--561, \textbf{2015.}
+  \end{enumerate}
+
+  \vspace{0.4em}
+  \begin{center}
+    \textcolor{Cian}{\rule{0.75\textwidth}{0.4pt}}\\[0.3em]
+    \gris{\small Repositorio: \texttt{evcs-evolutionary-optimization} $\cdot$ Matias Lara Plaza $\cdot$ 2026}
+  \end{center}
+\end{frame}
+
+\maketitle
+
+\end{document}

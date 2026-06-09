@@ -3,6 +3,7 @@
 
 #include "Instance.h"
 #include <vector>
+#include <random>
 
 using namespace std;
 
@@ -24,7 +25,7 @@ public:
     void evaluate();
     
     // Genera una solucion inicial 100% aleatoria
-    void randomize();
+    void randomize(mt19937& rng);
 };
 
 #endif // SOLUTION_H
