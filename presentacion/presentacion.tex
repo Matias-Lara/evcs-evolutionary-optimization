@@ -207,10 +207,9 @@ public:
   \end{columns}
 \end{frame}
 
-\begin{frame}[fragile]{Manejo de Restricciones: Penalidades}
+\begin{frame}{Manejo de Restricciones: Penalidades}
   \begin{columns}[T]
-    \column{0.46\textwidth}
-    \vspace{0.1em}
+    \column{0.50\textwidth}
     \textbf{Estrategia:} restricciones $\rightarrow$ penalidades aditivas
     {\setlength\abovedisplayskip{3pt}\setlength\belowdisplayskip{3pt}
     \[
@@ -220,7 +219,7 @@ public:
     \]
     }
     Con $\lambda = 10^9 \gg$ cualquier costo real.
-    \vspace{0.1em}
+    \vspace{0.2em}
     \begin{block}{Por qué funciona}
       \begin{itemize}\footnotesize
         \item Infactible $\Rightarrow$ fitness $\gg$ factible
@@ -229,25 +228,44 @@ public:
       \end{itemize}
     \end{block}
 
-    \column{0.52\textwidth}
+    \column{0.48\textwidth}
+    \textbf{Las 4 penalidades implementadas:}
+    \vspace{0.3em}
+    \begin{itemize}\footnotesize
+      \item \acento{R1} \textbf{Accesibilidad:}\\
+        $+\lambda$ por cada par $(i,j)$ sin cobertura mutua
+      \vspace{0.25em}
+      \item \acento{R2} \textbf{Demanda:}\\
+        $+\lambda\cdot(D_j - \text{cap}_j)$ por déficit de demanda
+      \vspace{0.25em}
+      \item \acento{R3} \textbf{Cobertura urbana:}\\
+        $+\lambda\cdot(\textit{CityArea} - \text{cobertura})$
+      \vspace{0.25em}
+      \item \acento{R4} \textbf{Zonas remotas:}\\
+        $+\lambda$ si ninguna zona remota tiene estación
+    \end{itemize}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Implementación: \texttt{Solution::evaluate()}}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
     \begin{lstlisting}
 void Solution::evaluate() {
   double W = 1e9;
   cost = 0; penalty = 0;
   int n = instance->n_nodes;
-
-  for (int i=0; i<n; ++i) // costo base
+  // Costo base
+  for (int i=0; i<n; ++i)
     if (chromosome[i])
       cost += instance->nodes[i].cost;
-
   // R1: Accesibilidad
   for (int i=0; i<n; ++i)
     for (int j=i+1; j<n; ++j)
       if (instance->isValidEdge(i,j))
         if (!chromosome[i]&&!chromosome[j])
           penalty += W;
-
-  // R2: Demanda (proporcional al deficit)
+  // R2: Demanda
   for (int j=0; j<n; ++j) {
     double cap = 0;
     for (int i=0; i<n; ++i)
@@ -257,7 +275,27 @@ void Solution::evaluate() {
     if (cap < instance->nodes[j].demand)
       penalty += W*(instance->nodes[j].demand-cap);
   }
-  // R3, R4 de forma similar...
+    \end{lstlisting}
+
+    \column{0.48\textwidth}
+    \begin{lstlisting}
+  // R3: Cobertura urbana
+  double cov = 0;
+  for (int j=0; j<n; ++j)
+    if (chromosome[j])
+      cov += instance->nodes[j].service_range;
+  if (cov < instance->city_area)
+    penalty += W*(instance->city_area-cov);
+
+  // R4: Zonas remotas
+  int remote = 0;
+  for (int j=0; j<n; ++j)
+    if (instance->nodes[j].is_remote
+        && chromosome[j])
+      remote++;
+  if (remote < 1)
+    penalty += W;
+
   fitness = cost + penalty;
 }
     \end{lstlisting}
