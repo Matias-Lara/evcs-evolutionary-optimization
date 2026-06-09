@@ -127,6 +127,25 @@
   \end{columns}
 \end{frame}
 
+\begin{frame}{Notación: Parámetros del Problema}
+  \begin{center}
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{|c|l|}
+    \hline
+    \multicolumn{2}{|c|}{\textbf{Tabla de parámetros}} \\
+    \hline
+    $C_i$       & Costo de construir estación en ubicación $i$ \\
+    $R$         & Distancia de autonomía promedio de autos eléctricos \\
+    $d(i,j)$    & Distancia entre nodos $i,\,j$ \\
+    $s_i$       & Rango de servicio de nodo $i$ \\
+    $D_i$       & Demanda en el nodo $i$ \\
+    $f_i$       & Poder de carga en el nodo $i$ \\
+    $CityArea$  & Área de la ciudad que se debe cubrir \\
+    \hline
+  \end{tabular}
+  \end{center}
+\end{frame}
+
 \begin{frame}{Modelo Matemático \gris{(Ou et al., 2025)}}
   \begin{columns}
     \column{0.50\textwidth}
@@ -141,21 +160,19 @@
     \]
     \acentob{$C_j$}: costo de construcción en $j$
     \column{0.48\textwidth}
-    \textbf{Restricciones:}
-    \vspace{0.2em}
-    \begin{enumerate}
-      \item[\acento{R1}] \textbf{Accesibilidad}\\
-        $x_i + x_j \geq 1 \;\forall(i,j)\in\bar{E}$
-      \vspace{0.2em}
-      \item[\acento{R2}] \textbf{Demanda}\\
-        $\displaystyle\sum_{i\in V_j^{\alpha R}} f_i x_i \geq D_j$
-      \vspace{0.2em}
-      \item[\acento{R3}] \textbf{Cobertura urbana}\\
-        $\displaystyle\sum_{j} s_j x_j \geq \textit{CityArea}$
-      \vspace{0.2em}
-      \item[\acento{R4}] \textbf{Zonas remotas}\\
-        $\displaystyle\sum_{j\in T} x_j \geq 1$
-    \end{enumerate}
+    \textbf{Sujeto a 4 restricciones:}
+    \vspace{0.5em}
+    \begin{itemize}
+      \item[\acento{R1}] \textbf{Accesibilidad}
+      \vspace{0.15em}
+      \item[\acento{R2}] \textbf{Demanda}
+      \vspace{0.15em}
+      \item[\acento{R3}] \textbf{Cobertura urbana}
+      \vspace{0.15em}
+      \item[\acento{R4}] \textbf{Zonas remotas}
+    \end{itemize}
+    \vspace{0.6em}
+    {\footnotesize\gris{Cada una se desarrolla a continuación con su modelo matemático e implementación.}}
   \end{columns}
 \end{frame}
 
@@ -247,57 +264,68 @@ public:
   \end{columns}
 \end{frame}
 
-\begin{frame}[fragile]{Implementación: \texttt{Solution::evaluate()}}
+\begin{frame}[fragile]{Restricciones R1 y R2: Modelo e Implementación}
+  \setlength\abovedisplayskip{3pt}\setlength\belowdisplayskip{3pt}
   \begin{columns}[T]
     \column{0.50\textwidth}
-    \begin{lstlisting}
-void Solution::evaluate() {
-  double W = 1e9;
-  cost = 0; penalty = 0;
-  int n = instance->n_nodes;
-  // Costo base
-  for (int i=0; i<n; ++i)
-    if (chromosome[i])
-      cost += instance->nodes[i].cost;
-  // R1: Accesibilidad
-  for (int i=0; i<n; ++i)
-    for (int j=i+1; j<n; ++j)
-      if (instance->isValidEdge(i,j))
-        if (!chromosome[i]&&!chromosome[j])
-          penalty += W;
-  // R2: Demanda
-  for (int j=0; j<n; ++j) {
-    double cap = 0;
-    for (int i=0; i<n; ++i)
-      if ((i==j||instance->isValidEdge(i,j))
-          && chromosome[i])
-        cap += instance->nodes[i].capacity;
-    if (cap < instance->nodes[j].demand)
-      penalty += W*(instance->nodes[j].demand-cap);
-  }
+    \acento{R1} \textbf{Accesibilidad}\\
+    {\footnotesize Todo par de nodos a distancia válida debe tener al menos una estación.}
+    \[ x_i + x_j \geq 1 \quad \forall(i,j)\in\bar{E} \]
+    \begin{lstlisting}[numbers=none]
+for (int i=0; i<n; ++i)
+ for (int j=i+1; j<n; ++j)
+  if (instance->isValidEdge(i,j))
+   if (!chromosome[i]&&!chromosome[j])
+    penalty += W;
     \end{lstlisting}
 
     \column{0.48\textwidth}
-    \begin{lstlisting}
-  // R3: Cobertura urbana
-  double cov = 0;
-  for (int j=0; j<n; ++j)
-    if (chromosome[j])
-      cov += instance->nodes[j].service_range;
-  if (cov < instance->city_area)
-    penalty += W*(instance->city_area-cov);
-
-  // R4: Zonas remotas
-  int remote = 0;
-  for (int j=0; j<n; ++j)
-    if (instance->nodes[j].is_remote
-        && chromosome[j])
-      remote++;
-  if (remote < 1)
-    penalty += W;
-
-  fitness = cost + penalty;
+    \acento{R2} \textbf{Demanda}\\
+    {\footnotesize Estaciones en la vecindad $\alpha R$ del nodo $j$ deben cubrir su demanda $D_j$.}
+    \[ \sum_{i\in V_j^{\alpha R}} f_i\,x_i \geq D_j \]
+    \begin{lstlisting}[numbers=none]
+for (int j=0; j<n; ++j) {
+ double cap = 0;
+ for (int i=0; i<n; ++i)
+  if ((i==j || instance->dist_matrix[i][j]
+      <= instance->alpha*instance->R)
+      && chromosome[i])
+   cap += instance->nodes[i].capacity;
+ if (cap < instance->nodes[j].demand)
+  penalty += W*(instance->nodes[j].demand-cap);
 }
+    \end{lstlisting}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Restricciones R3 y R4: Modelo e Implementación}
+  \setlength\abovedisplayskip{3pt}\setlength\belowdisplayskip{3pt}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+    \acento{R3} \textbf{Cobertura Urbana}\\
+    {\footnotesize Los rangos de servicio de las estaciones deben sumar al menos \textit{CityArea}.}
+    \[ \sum_{j} s_j\,x_j \geq \textit{CityArea} \]
+    \begin{lstlisting}[numbers=none]
+double cov = 0;
+for (int j=0; j<n; ++j)
+ if (chromosome[j])
+  cov += instance->nodes[j].service_range;
+if (cov < instance->city_area)
+ penalty += W*(instance->city_area-cov);
+    \end{lstlisting}
+
+    \column{0.48\textwidth}
+    \acento{R4} \textbf{Zonas Remotas}\\
+    {\footnotesize Al menos una estación en el conjunto de zonas remotas $T$.}
+    \[ \sum_{j\in T} x_j \geq 1 \]
+    \begin{lstlisting}[numbers=none]
+int remote = 0;
+for (int j=0; j<n; ++j)
+ if (instance->nodes[j].is_remote
+     && chromosome[j])
+  remote++;
+if (remote < 1)
+ penalty += W;
     \end{lstlisting}
   \end{columns}
 \end{frame}
@@ -382,35 +410,23 @@ public:
     \end{enumerate}
 
     \column{0.48\textwidth}
-    \begin{lstlisting}
-// Genera un individuo aleatorio
-void Solution::randomize(mt19937& rng) {
-  uniform_int_distribution<int> bit(0, 1);
-  for (int i = 0;
-       i < instance->n_nodes; ++i)
-    chromosome[i] = bit(rng);
-  evaluate();
-}
-
-// Inicializa toda la poblacion
-void GeneticAlgorithm::
-    initializePopulation() {
-  population.clear();
-  for (int i = 0; i < pop_size; ++i) {
-    Solution sol(instance);
-    sol.randomize(rng); // gen aleatorio
-    population.push_back(sol);
-    if (sol.fitness < best_solution.fitness)
-      best_solution = sol;
-  }
-}
+    \textbf{Línea clave} \gris{(\texttt{Solution::randomize})}:
+    \vspace{0.3em}
+    \begin{lstlisting}[numbers=none]
+// bit aleatorio 0 o 1 por cada nodo
+chromosome[i] = bit(rng);
     \end{lstlisting}
+    \vspace{0.4em}
+    \begin{block}{Generador \texttt{mt19937}}
+      \footnotesize Mersenne Twister: alta calidad estadística, semilla basada en el reloj del sistema para resultados distintos en cada ejecución.
+    \end{block}
   \end{columns}
 \end{frame}
 
 \begin{frame}{El Algoritmo Genético: Flujo Completo}
   \begin{columns}[T]
     \column{0.52\textwidth}
+    \vspace{1.8em}
     \begin{block}{Parámetros implementados}
       \begin{tabular}{ll}
         \acentob{pop\_size}        & 50 individuos \\
@@ -419,15 +435,6 @@ void GeneticAlgorithm::
         \acentob{max\_generations} & 100           \\
       \end{tabular}
     \end{block}
-    \vspace{0.3em}
-    \textbf{Ciclo por generación:}
-    \begin{enumerate}
-      \item \alert{Preservar el mejor} (Elitismo)
-      \item Seleccionar padres (Ruleta)
-      \item Cruzar padres (Cruce Uniforme)
-      \item Mutar hijos (Bit-flip)
-      \item Reemplazar generación completa
-    \end{enumerate}
 
     \column{0.45\textwidth}
     \begin{center}
@@ -489,26 +496,16 @@ void GeneticAlgorithm::
     El \acento{mejor individuo} ocupa el mayor sector.
 
     \column{0.58\textwidth}
-    \begin{lstlisting}
-Solution GA::rouletteWheelSelection() {
-  double max_f = 0;
-  for (auto& s : population)
-    if (s.fitness > max_f) max_f = s.fitness;
-  double total = 0;
-  vector<double> inv(pop_size);
-  for (int i = 0; i < pop_size; ++i) {
-    inv[i] = (max_f - population[i].fitness) + 1.0;
-    total += inv[i];
-  }
-  uniform_real_distribution<> d(0.0, total);
-  double r = d(rng), acc = 0;
-  for (int i = 0; i < pop_size; ++i) {
-    acc += inv[i];
-    if (acc >= r) return population[i];
-  }
-  return population.back();
-}
+    \textbf{Línea clave} \gris{(\texttt{rouletteWheelSelection})}:
+    \vspace{0.3em}
+    \begin{lstlisting}[numbers=none]
+// fitness bajo -> inv alto -> mayor sector
+inv[i] = (max_f - pop[i].fitness) + 1.0;
     \end{lstlisting}
+    \vspace{0.4em}
+    \begin{block}{¿Por qué \texttt{+1.0}?}
+      \footnotesize Evita que el mejor individuo quede con $\tilde{f}_i=0$ y probabilidad de selección nula.
+    \end{block}
   \end{columns}
 \end{frame}
 
@@ -538,17 +535,21 @@ Solution GA::rouletteWheelSelection() {
   \end{tikzpicture}
   \end{center}
   \vspace{0.15em}
-  \begin{lstlisting}[numbers=none]
-for (size_t i = 0; i < parent1.chromosome.size(); ++i) {
-  if (dist(rng) < 0.5) {                    // Intercambiar genes
-    child1.chromosome[i] = parent2.chromosome[i];
-    child2.chromosome[i] = parent1.chromosome[i];
-  } else {                                   // Heredar directo
-    child1.chromosome[i] = parent1.chromosome[i];
-    child2.chromosome[i] = parent2.chromosome[i];
-  }
-}
-  \end{lstlisting}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+    \textbf{Línea clave} \gris{(\texttt{uniformCrossover})}:
+    \begin{lstlisting}[numbers=none]
+// por cada gen, moneda 50/50:
+if (dist(rng) < 0.5) // intercambiar
+  child1[i] = parent2[i];
+else                  // heredar directo
+  child1[i] = parent1[i];
+    \end{lstlisting}
+    \column{0.46\textwidth}
+    \begin{block}{¿Por qué uniforme?}
+      \footnotesize Cualquier combinación de genes de ambos padres es posible. Sin sesgo posicional a diferencia del cruce de 1 punto.
+    \end{block}
+  \end{columns}
 \end{frame}
 
 \begin{frame}[fragile]{Movimiento III: Mutación Bit-flip y Elitismo}
@@ -575,31 +576,26 @@ for (size_t i = 0; i < parent1.chromosome.size(); ++i) {
       \node[Verde,font=\tiny] at (4*0.78,-0.37){flip!};
     \end{tikzpicture}
     \end{center}
+    \textbf{Línea clave} \gris{(\texttt{bitFlipMutation})}:
     \begin{lstlisting}[numbers=none]
-for (size_t i = 0; i < sol.chromosome.size(); ++i)
-  if (dist(rng) < mutation_rate)
-    sol.chromosome[i] = 1 - sol.chromosome[i];
+if (dist(rng) < mutation_rate) // 5%
+  chromosome[i] = 1 - chromosome[i];
     \end{lstlisting}
 
     \column{0.48\textwidth}
     \textbf{\acento{Elitismo} (1-best)}\\[0.2em]
     El mejor de la generación $g$ \textbf{pasa directo} a $g{+}1$:
     \begin{lstlisting}[numbers=none]
-// Mejor de la generacion actual
-Solution best = population[0];
-for (auto& sol : population)
-  if (sol.fitness < best.fitness)
-    best = sol;
-
 // Sobrevive intacto
-new_population.push_back(best);
-
-// Actualizar record global
-if (best.fitness < best_solution.fitness)
-  best_solution = best;
+new_population.push_back(best_current);
     \end{lstlisting}
-    \vspace{0.2em}
-    \textbf{Garantía:} el fitness de la mejor solución global \textbf{nunca empeora} entre generaciones.
+    \vspace{0.4em}
+    \textbf{Garantía:} el fitness global \textbf{nunca empeora} entre generaciones.
+    \vspace{0.4em}
+    \begin{block}{Orden en cada generación}
+      \footnotesize
+      Elitismo $\to$ Ruleta $\times 2$ $\to$ Cruce $\to$ Bit-flip $\to$ Evaluar
+    \end{block}
   \end{columns}
 \end{frame}
 
@@ -700,14 +696,14 @@ Nodos construidos: 9/10
     \begin{itemize}\footnotesize
       \item[\acento{\checkmark}] GA completo en C++: Ruleta, Cruce Uniforme, Bit-flip y Elitismo
       \item[\acento{\checkmark}] 4 restricciones manejadas por penalidades ($\lambda = 10^9$)
-      \item[\acento{\checkmark}] Resuelve instancias pequeñas ($N{=}6,8,10$) encontrando soluciones factibles
+      \item[\acento{\checkmark}] Soluciones factibles en instancias pequeñas ($N{=}6,8,10$)
+      \item[\acento{\checkmark}] R2 con vecindad $V_j^{\alpha R}$ correcta para cualquier $\alpha$
     \end{itemize}
 
-    \vspace{0.1em}
     \acentob{Desafío central}
     \begin{itemize}\footnotesize
-      \item EVCSPP es NP-duro: sin garantía de optimalidad global
-      \item En instancias grandes, el balance exploración/explotación es crítico
+      \item NP-duro: sin garantía de óptimo global
+      \item En instancias grandes el balance exploración/explotación es crítico
     \end{itemize}
 
     \column{0.48\textwidth}
@@ -716,7 +712,7 @@ Nodos construidos: 9/10
       \item[\acentob{$\to$}] Ajustar hiperparámetros ($p_m$, $p_c$, tamaño de población) en experimentos sistemáticos
       \item[\acentob{$\to$}] Correr instancias grandes ($N{=}100,200,300$) y datos reales
       \item[\acentob{$\to$}] Inicialización \textbf{greedy} para comparar si mejora o empeora el resultado versus aleatoria
-      \item[\acentob{$\to$}] Variar $\alpha$: actualmente fuerza muchas aristas válidas. Aumentarlo da \textbf{más flexibilidad} al modelo y puede reducir costos al no obligar a construir en la mayoría de nodos
+      \item[\acentob{$\to$}] Variar $\alpha$: con $\alpha{=}0$ la R1 obliga a construir en casi todos los nodos; aumentarlo reduce aristas válidas y da más flexibilidad al GA
     \end{itemize}
   \end{columns}
 \end{frame}
