@@ -55,10 +55,11 @@ void Solution::evaluate() {
     for (int j = 0; j < n; ++j) {
         double provided_capacity = 0;
         for (int i = 0; i < n; ++i) {
-            // Evaluamos si la estacion 'i' puede proveer a la zona 'j'
-            // Vecindad V_j^{alpha R}: estaciones a distancia entre alpha*R y R (banda),
-            // segun la definicion del paper (Ou et al., 2025) y el informe.
-            if (i == j || instance->isValidEdge(i, j)) {
+            // Evaluamos si la estacion 'i' puede proveer a la zona 'j'.
+            // Vecindad V_j^{alpha R}: estaciones a distancia ENTRE alpha*R y R de j
+            // (banda), con i != j -> EXCLUYE al propio nodo j, fiel al paper
+            // Ou et al. 2025 (Tabla I y ec. 7). isValidEdge ya garantiza i != j.
+            if (instance->isValidEdge(i, j)) {
                 if (chromosome[i] == 1) {
                     provided_capacity += instance->nodes[i].capacity; // Sumamos f_i
                 }
