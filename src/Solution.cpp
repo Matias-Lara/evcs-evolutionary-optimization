@@ -56,7 +56,9 @@ void Solution::evaluate() {
         double provided_capacity = 0;
         for (int i = 0; i < n; ++i) {
             // Evaluamos si la estacion 'i' puede proveer a la zona 'j'
-            if (i == j || instance->dist_matrix[i][j] <= instance->alpha * instance->R) {
+            // Vecindad V_j^{alpha R}: estaciones a distancia entre alpha*R y R (banda),
+            // segun la definicion del paper (Ou et al., 2025) y el informe.
+            if (i == j || instance->isValidEdge(i, j)) {
                 if (chromosome[i] == 1) {
                     provided_capacity += instance->nodes[i].capacity; // Sumamos f_i
                 }
