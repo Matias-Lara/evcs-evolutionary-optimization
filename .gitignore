@@ -2,6 +2,9 @@
 *.o
 *.a
 
+# Artefactos de compilacion (objetos .o y dependencias .d van aqui)
+build/
+
 # Varios
 *.xlsx
 evcs_solver
