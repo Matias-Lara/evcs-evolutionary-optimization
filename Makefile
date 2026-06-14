@@ -4,7 +4,15 @@ LDFLAGS =
 
 SRCS = src/main.cpp src/Instance.cpp src/Solution.cpp src/GeneticAlgorithm.cpp
 OBJS = $(SRCS:.cpp=.o)
-TARGET = evcs_solver
+
+# Nombre del ejecutable segun plataforma: en Windows (MSYS2/MinGW) g++ genera un
+# .exe, por lo que el target debe llamarse igual para que make no relinkee de mas
+# y para que 'make clean' lo elimine correctamente. En Linux queda sin extension.
+ifeq ($(OS),Windows_NT)
+    TARGET = evcs_solver.exe
+else
+    TARGET = evcs_solver
+endif
 
 all: $(TARGET)
 

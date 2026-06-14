@@ -136,23 +136,29 @@ def main():
           f"crossover={args.cross} | mut=1/n")
     print(f">> pops={pops} gens={gens} seeds={seeds}")
 
-    rows = []
     start = time.time()
-    with ThreadPoolExecutor(max_workers=args.jobs) as ex:
-        futs = [ex.submit(run_one, solver, *job, args.cross) for job in jobs]
-        for i, fut in enumerate(as_completed(futs), 1):
-            rows.append(fut.result())
-            if i % max(1, len(jobs) // 20) == 0 or i == len(jobs):
-                print(f"   {i}/{len(jobs)} corridas listas...", flush=True)
-
-    with open(out_path, "w", newline="") as f:
+    done = feas = 0
+    # Escritura INCREMENTAL: abrimos el CSV antes del barrido y volcamos cada fila
+    # apenas termina, con flush a disco. Asi, si el proceso se corta a mitad
+    # (Ctrl-C, cierre, error externo) NO se pierde el trabajo ya hecho.
+    with open(out_path, "w", newline="") as f, \
+         ThreadPoolExecutor(max_workers=args.jobs) as ex:
         w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
         w.writeheader()
-        w.writerows(rows)
+        f.flush()
 
-    feas = sum(1 for r in rows if r["factible"] == "si")
-    print(f">> Listo en {time.time() - start:.0f}s. {len(rows)} filas -> {out_path}")
-    print(f">> Factibles: {feas} / {len(rows)}")
+        futs = [ex.submit(run_one, solver, *job, args.cross) for job in jobs]
+        for fut in as_completed(futs):
+            row = fut.result()
+            w.writerow(row)
+            f.flush()
+            done += 1
+            feas += 1 if row["factible"] == "si" else 0
+            if done % max(1, len(jobs) // 20) == 0 or done == len(jobs):
+                print(f"   {done}/{len(jobs)} corridas listas...", flush=True)
+
+    print(f">> Listo en {time.time() - start:.0f}s. {done} filas -> {out_path}")
+    print(f">> Factibles: {feas} / {done}")
 
 
 if __name__ == "__main__":

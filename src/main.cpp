@@ -33,6 +33,16 @@ int main(int argc, char* argv[]) {
     int max_generations = (argc > 5) ? atoi(argv[5]) : 100;
     long seed = (argc > 6) ? atol(argv[6]) : -1;
 
+    // Validacion basica de parametros: atoi/atof devuelven 0 ante texto no
+    // numerico. Un pop_size < 1 dejaria la poblacion vacia y el GA accederia a
+    // population[0] fuera de rango (crash). Clampeamos a valores sensatos.
+    if (pop_size < 1) pop_size = 1;
+    if (max_generations < 0) max_generations = 0;
+    if (crossover_rate < 0.0) crossover_rate = 0.0;
+    if (crossover_rate > 1.0) crossover_rate = 1.0;
+    if (mutation_rate < 0.0) mutation_rate = 0.0;
+    if (mutation_rate > 1.0) mutation_rate = 1.0;
+
     // 3. Crear el motor del Algoritmo Genético
     GeneticAlgorithm ga(&instance, pop_size, crossover_rate, mutation_rate, max_generations, seed);
     cout << "Parametros GA -> pop:" << pop_size << " cross:" << crossover_rate
