@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include "Instance.h"
 #include "GeneticAlgorithm.h"
 
@@ -23,11 +24,13 @@ int main(int argc, char* argv[]) {
     cout << "========================================" << endl;
 
     // 2. Parámetros del Algoritmo Genético
-    // Estos parámetros iniciales pueden ajustarse para experimentar después
-    int pop_size = 50;
-    double crossover_rate = 0.8;
-    double mutation_rate = 0.05;
-    int max_generations = 100;
+    // Se pueden pasar por linea de comandos para experimentar:
+    //   ./evcs_solver <instancia> [pop_size] [crossover_rate] [mutation_rate] [max_generations]
+    // Si no se pasan, se usan los valores por defecto.
+    int pop_size = (argc > 2) ? atoi(argv[2]) : 50;
+    double crossover_rate = (argc > 3) ? atof(argv[3]) : 0.8;
+    double mutation_rate = (argc > 4) ? atof(argv[4]) : 0.05;
+    int max_generations = (argc > 5) ? atoi(argv[5]) : 100;
 
     // 3. Crear el motor del Algoritmo Genético
     GeneticAlgorithm ga(&instance, pop_size, crossover_rate, mutation_rate, max_generations);
