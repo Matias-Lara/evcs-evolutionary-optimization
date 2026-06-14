@@ -1,0 +1,8 @@
+# Normalizar finales de linea a LF en el repositorio Y en el working tree,
+# tanto en Windows (MSYS2/MinGW) como en Linux. Evita los diffs fantasma y el
+# aviso "LF will be replaced by CRLF" al trabajar el mismo repo entre ambos SO.
+* text=auto eol=lf
+
+# Archivos binarios: git no debe convertir nunca sus finales de linea.
+*.pdf  binary
+*.xlsx binary
