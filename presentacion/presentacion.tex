@@ -281,14 +281,13 @@ for (int i=0; i<n; ++i)
 
     \column{0.48\textwidth}
     \acento{R2} \textbf{Demanda}\\
-    {\footnotesize Estaciones en la vecindad $\alpha R$ del nodo $j$ deben cubrir su demanda $D_j$.}
+    {\footnotesize Estaciones en el anillo $[\alpha R,\,R]$ alrededor del nodo $j$ deben cubrir su demanda $D_j$.}
     \[ \sum_{i\in V_j^{\alpha R}} f_i\,x_i \geq D_j \]
     \begin{lstlisting}[numbers=none]
 for (int j=0; j<n; ++j) {
  double cap = 0;
  for (int i=0; i<n; ++i)
-  if ((i==j || instance->dist_matrix[i][j]
-      <= instance->alpha*instance->R)
+  if ((i==j || instance->isValidEdge(i,j))
       && chromosome[i])
    cap += instance->nodes[i].capacity;
  if (cap < instance->nodes[j].demand)
@@ -697,7 +696,7 @@ Nodos construidos: 9/10
       \item[\acento{\checkmark}] GA completo en C++: Ruleta, Cruce Uniforme, Bit-flip y Elitismo
       \item[\acento{\checkmark}] 4 restricciones manejadas por penalidades ($\lambda = 10^9$)
       \item[\acento{\checkmark}] Soluciones factibles en instancias pequeñas ($N{=}6,8,10$)
-      \item[\acento{\checkmark}] R2 con vecindad $V_j^{\alpha R}$ correcta para cualquier $\alpha$
+      \item[\acento{\checkmark}] R2 con anillo $V_j^{\alpha R}=[\alpha R,\,R]$ fiel al paper
     \end{itemize}
 
     \acentob{Desafío central}
