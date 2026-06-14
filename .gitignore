@@ -5,6 +5,10 @@
 # Varios
 *.xlsx
 evcs_solver
+evcs_solver.exe
+
+# Resultados de barridos (se regeneran con run_sweep.py)
+results/
 
 # LaTeX auxiliares
 *.aux
