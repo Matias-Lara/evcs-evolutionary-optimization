@@ -15,12 +15,14 @@ public:
     double crossover_rate;
     double mutation_rate;
     int max_generations;
+    unsigned seed_used;  // semilla efectivamente usada por el RNG (reproducibilidad)
 
     vector<Solution> population;
     Solution best_solution;
 
-    // Constructor que recibe la instancia y los parámetros del algoritmo
-    GeneticAlgorithm(const Instance* inst, int p_size, double c_rate, double m_rate, int max_gen);
+    // Constructor que recibe la instancia y los parámetros del algoritmo.
+    // seed >= 0 -> semilla fija (reproducible); seed < 0 -> semilla basada en el reloj.
+    GeneticAlgorithm(const Instance* inst, int p_size, double c_rate, double m_rate, int max_gen, long seed = -1);
 
     // Método principal que ejecuta el bucle evolutivo
     void run();

@@ -5,16 +5,17 @@
 
 using namespace std;
 
-GeneticAlgorithm::GeneticAlgorithm(const Instance* inst, int p_size, double c_rate, double m_rate, int max_gen)
+GeneticAlgorithm::GeneticAlgorithm(const Instance* inst, int p_size, double c_rate, double m_rate, int max_gen, long seed)
     : instance(inst), pop_size(p_size), crossover_rate(c_rate), mutation_rate(m_rate), max_generations(max_gen),
       best_solution(inst) {
-    
-    // Inicializar el generador de números aleatorios con una semilla basada en el reloj
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    rng = mt19937(seed);
-    
+
+    // Semilla: si se pasa una >= 0 se usa fija (reproducible); si no, se basa en el reloj.
+    seed_used = (seed >= 0) ? (unsigned)seed
+                            : (unsigned)std::chrono::system_clock::now().time_since_epoch().count();
+    rng = mt19937(seed_used);
+
     // Se inicializa la mejor solución con un fitness gigantesco (peor caso)
-    best_solution.fitness = 1e18; 
+    best_solution.fitness = 1e18;
 }
 
 void GeneticAlgorithm::initializePopulation() {

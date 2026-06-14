@@ -25,15 +25,19 @@ int main(int argc, char* argv[]) {
 
     // 2. Parámetros del Algoritmo Genético
     // Se pueden pasar por linea de comandos para experimentar:
-    //   ./evcs_solver <instancia> [pop_size] [crossover_rate] [mutation_rate] [max_generations]
-    // Si no se pasan, se usan los valores por defecto.
+    //   ./evcs_solver <instancia> [pop_size] [crossover_rate] [mutation_rate] [max_generations] [seed]
+    // Si no se pasan, se usan los valores por defecto. seed < 0 (o ausente) => semilla por reloj.
     int pop_size = (argc > 2) ? atoi(argv[2]) : 50;
     double crossover_rate = (argc > 3) ? atof(argv[3]) : 0.8;
     double mutation_rate = (argc > 4) ? atof(argv[4]) : 0.05;
     int max_generations = (argc > 5) ? atoi(argv[5]) : 100;
+    long seed = (argc > 6) ? atol(argv[6]) : -1;
 
     // 3. Crear el motor del Algoritmo Genético
-    GeneticAlgorithm ga(&instance, pop_size, crossover_rate, mutation_rate, max_generations);
+    GeneticAlgorithm ga(&instance, pop_size, crossover_rate, mutation_rate, max_generations, seed);
+    cout << "Parametros GA -> pop:" << pop_size << " cross:" << crossover_rate
+         << " mut:" << mutation_rate << " gen:" << max_generations
+         << " seed:" << ga.seed_used << endl;
 
     // 4. Ejecutar el Algoritmo
     ga.run();
