@@ -2,20 +2,26 @@
 """
 Barrido experimental EVCSPP.
 
-Ejes barridos : alpha (via archivos de instancia) x pop_size x max_generations x seeds
-Fijos         : crossover_rate (robusto en la literatura),
-                mutation_rate = 1/n  (principista, Muhlenbein 1992 / Back 1993)
+Ejes barridos : alpha (via archivos de instancia) x pop_size
+Replica       : seeds (NO es un eje, es replica estadistica -> se agrega despues)
+Fijos         : crossover_rate = 0.9, mutation_rate = 1/n (principista),
+                criterio de parada (max_gen tope + patience) en vez de gen fijo
 Salida        : results/sweep_reales.csv  (una fila por corrida)
+
+El gen ya NO se barre: el solver corta por estancamiento (patience generaciones
+sin mejora, solo si ya es factible) con max_gen como tope duro. Se registra en
+'gen_alcanzado' cuantas generaciones uso cada corrida -> permite comparar el
+ESFUERZO (evaluaciones = pop x gen_alcanzado), no solo el costo final.
 
 Solo usa la biblioteca estandar (no requiere pip install). El ploteo posterior
 si usara pandas/matplotlib, pero la generacion del CSV corre tal cual.
 
 Uso:
     make                       # compilar el solver primero
-    python run_sweep.py        # grilla por defecto
-    python run_sweep.py --jobs 6 --pops 10,20,50,100,200 --gens 500,1000,2000,4000 --seeds 1,2,3,4,5
+    python run_sweep.py        # grilla por defecto (alpha x pop x 5 seeds = 250 corridas)
+    python run_sweep.py --jobs 6 --pops 10,20,50,100,200 --seeds 1,2,3,4,5 --max-gen 4000 --patience 200
 
-En Windows (MSYS2 UCRT64 o consola normal con Python): mismo comando.
+En Windows (MSYS2 UCRT64): mismo comando.
 El barrido es vergonzosamente paralelo: --jobs = nro de nucleos (p.ej. 6 en un i5-10400F).
 """
 import argparse
@@ -45,7 +51,8 @@ INSTANCES = [
 ]
 
 CSV_FIELDS = [
-    "instancia", "n", "alpha", "pop", "crossover", "mutation", "gen", "seed",
+    "instancia", "n", "alpha", "pop", "crossover", "mutation",
+    "max_gen", "patience", "seed", "gen_alcanzado", "evaluaciones",
     "fitness", "costo", "penalizacion", "nodos_construidos", "nodos_total",
     "factible", "wall_s",
 ]
@@ -54,6 +61,7 @@ RE_FIT = re.compile(r"Fitness Total:\s*(\S+)")
 RE_COST = re.compile(r"Costo Base:\s*(\S+)")
 RE_PEN = re.compile(r"Penalizacion:\s*(\S+)")
 RE_NODES = re.compile(r"Nodos construidos:\s*(\d+)/(\d+)")
+RE_GENS = re.compile(r"Generaciones ejecutadas:\s*(\d+)")
 
 
 def find_solver():
@@ -72,11 +80,13 @@ def read_header(fp):
     return int(parts[0]), parts[2]
 
 
-def run_one(solver, inst, pop, gen, seed, cross):
+def run_one(solver, inst, pop, seed, cross, max_gen, patience):
     fp = ROOT / inst
     n, alpha = read_header(fp)
     mut = 1.0 / n                     # mutacion = 1/n (principista)
-    cmd = [solver, str(fp), str(pop), str(cross), f"{mut:.6f}", str(gen), str(seed)]
+    # CLI del solver: <inst> pop cross mut max_gen seed patience
+    cmd = [solver, str(fp), str(pop), str(cross), f"{mut:.6f}",
+           str(max_gen), str(seed), str(patience)]
 
     t0 = time.perf_counter()
     out = subprocess.run(cmd, capture_output=True, text=True).stdout
@@ -89,15 +99,23 @@ def run_one(solver, inst, pop, gen, seed, cross):
     fit, cost, pen = grab(RE_FIT), grab(RE_COST), grab(RE_PEN)
     mn = RE_NODES.search(out)
     built, total = (mn.group(1), mn.group(2)) if mn else ("", "")
+    gen_run = grab(RE_GENS)           # generaciones realmente ejecutadas (parada temprana)
 
     try:
         feas = "si" if float(pen) == 0.0 else "no"
     except (ValueError, TypeError):
         feas = "ERROR"
 
+    try:
+        evals = str(pop * int(gen_run))   # esfuerzo computacional = pop x generaciones
+    except ValueError:
+        evals = ""
+
     return {
         "instancia": os.path.basename(inst), "n": n, "alpha": alpha, "pop": pop,
-        "crossover": cross, "mutation": f"{mut:.6f}", "gen": gen, "seed": seed,
+        "crossover": cross, "mutation": f"{mut:.6f}",
+        "max_gen": max_gen, "patience": patience, "seed": seed,
+        "gen_alcanzado": gen_run, "evaluaciones": evals,
         "fitness": fit, "costo": cost, "penalizacion": pen,
         "nodos_construidos": built, "nodos_total": total,
         "factible": feas, "wall_s": f"{wall:.2f}",
@@ -112,29 +130,28 @@ def main():
     ap = argparse.ArgumentParser(description="Barrido experimental EVCSPP -> CSV")
     ap.add_argument("--jobs", type=int, default=6, help="corridas en paralelo (= nucleos)")
     ap.add_argument("--pops", default="10,20,50,100,200")
-    ap.add_argument("--gens", default="500,1000,2000,4000")
-    ap.add_argument("--seeds", default="1,2,3,4,5")
+    ap.add_argument("--seeds", default="1,2,3,4,5", help="replica estadistica (no es un eje)")
     ap.add_argument("--cross", type=float, default=0.9)
+    ap.add_argument("--max-gen", type=int, default=4000, help="tope duro de generaciones")
+    ap.add_argument("--patience", type=int, default=200, help="generaciones sin mejora antes de cortar")
     ap.add_argument("--out", default="results/sweep_reales.csv")
     args = ap.parse_args()
 
     solver = find_solver()
     pops = parse_list(args.pops, int)
-    gens = parse_list(args.gens, int)
     seeds = parse_list(args.seeds, int)
 
-    jobs = [(inst, pop, gen, seed)
+    jobs = [(inst, pop, seed)
             for inst in INSTANCES
             for pop in pops
-            for gen in gens
             for seed in seeds]
 
     out_path = ROOT / args.out
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     print(f">> Barrido: {len(jobs)} corridas | {args.jobs} en paralelo | "
-          f"crossover={args.cross} | mut=1/n")
-    print(f">> pops={pops} gens={gens} seeds={seeds}")
+          f"cross={args.cross} | mut=1/n | max_gen={args.max_gen} | patience={args.patience}")
+    print(f">> ejes: alpha x pop | pops={pops} | seeds(replica)={seeds}")
 
     start = time.time()
     done = feas = 0
@@ -147,7 +164,7 @@ def main():
         w.writeheader()
         f.flush()
 
-        futs = [ex.submit(run_one, solver, *job, args.cross) for job in jobs]
+        futs = [ex.submit(run_one, solver, *job, args.cross, args.max_gen, args.patience) for job in jobs]
         for fut in as_completed(futs):
             row = fut.result()
             w.writerow(row)

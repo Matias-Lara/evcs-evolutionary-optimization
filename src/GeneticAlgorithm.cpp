@@ -5,9 +5,9 @@
 
 using namespace std;
 
-GeneticAlgorithm::GeneticAlgorithm(const Instance* inst, int p_size, double c_rate, double m_rate, int max_gen, long seed)
+GeneticAlgorithm::GeneticAlgorithm(const Instance* inst, int p_size, double c_rate, double m_rate, int max_gen, long seed, int pat)
     : instance(inst), pop_size(p_size), crossover_rate(c_rate), mutation_rate(m_rate), max_generations(max_gen),
-      best_solution(inst) {
+      patience(pat), generations_run(0), best_solution(inst) {
 
     // Semilla: si se pasa una >= 0 se usa fija (reproducible); si no, se basa en el reloj.
     seed_used = (seed >= 0) ? (unsigned)seed
@@ -103,10 +103,18 @@ void GeneticAlgorithm::bitFlipMutation(Solution& sol) {
 void GeneticAlgorithm::run() {
     cout << "--- Iniciando Algoritmo Genetico ---" << endl;
     initializePopulation();
-    
+
+    // Criterio de parada: contador de generaciones consecutivas SIN mejora.
+    // Con elitismo el mejor fitness es monotono (nunca empeora), asi que basta
+    // un contador: se resetea ante cualquier mejora estricta y se corta cuando
+    // llega a 'patience'... pero SOLO si ya hay solucion factible. Si todavia es
+    // infactible, se sigue hasta el tope duro 'max_generations'.
+    int stall = 0;
+    generations_run = max_generations;  // valor si se agota el tope sin cortar antes
+
     for (int gen = 0; gen < max_generations; ++gen) {
         vector<Solution> new_population;
-        
+
         // ----- ELITISMO -----
         // 1. Encontrar al mejor individuo de la población actual
         Solution best_current = population[0];
@@ -115,15 +123,18 @@ void GeneticAlgorithm::run() {
                 best_current = sol;
             }
         }
-        
+
         // 2. Insertarlo directamente a la nueva generación (sobrevive intacto)
         new_population.push_back(best_current);
-        
+
         // Actualizamos la mejor solución histórica si superamos nuestro record
         if (best_current.fitness < best_solution.fitness) {
             best_solution = best_current;
-            cout << "Generacion " << gen << " | Nuevo mejor fitness: " << best_solution.fitness 
+            stall = 0;  // hubo mejora -> reinicia el contador de estancamiento
+            cout << "Generacion " << gen << " | Nuevo mejor fitness: " << best_solution.fitness
                  << " (Costo: " << best_solution.cost << ", Penalidad: " << best_solution.penalty << ")" << endl;
+        } else {
+            stall++;    // sin mejora en esta generacion
         }
 
         // ----- REPRODUCCIÓN -----
@@ -156,8 +167,19 @@ void GeneticAlgorithm::run() {
         
         // Reemplazo generacional
         population = new_population;
+
+        // ----- CRITERIO DE PARADA -----
+        // Cortar si llevamos 'patience' generaciones sin mejorar Y la mejor
+        // solucion ya es factible (penalizacion == 0). Mientras siga infactible
+        // no cortamos: dejamos que agote el tope buscando factibilidad.
+        if (best_solution.penalty == 0.0 && stall >= patience) {
+            generations_run = gen + 1;  // gen es 0-indexado: contamos esta generacion
+            cout << "Parada temprana: " << patience << " generaciones sin mejora (solucion factible)." << endl;
+            break;
+        }
     }
-    
+
     cout << "--- Fin del Algoritmo Genetico ---" << endl;
+    cout << "Generaciones ejecutadas: " << generations_run << "/" << max_generations << endl;
     cout << "Mejor fitness global encontrado: " << best_solution.fitness << endl;
 }
