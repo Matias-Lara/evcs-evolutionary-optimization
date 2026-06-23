@@ -130,6 +130,20 @@ def parse_list(s, conv):
     return [conv(x) for x in s.replace(",", " ").split()]
 
 
+def draw_bar(done, total, feas, start, width=30):
+    """Barra de progreso in-place (stdlib pura, sin dependencias)."""
+    frac = done / total
+    filled = int(width * frac)
+    bar = "#" * filled + "-" * (width - filled)
+    elapsed = time.time() - start
+    eta = (elapsed / done) * (total - done) if done else 0.0
+    sys.stdout.write(
+        f"\r[{bar}] {100 * frac:5.1f}% | {done:>4}/{total} corridas "
+        f"| factibles {feas:>4} | {elapsed:5.0f}s | ETA {eta:5.0f}s"
+    )
+    sys.stdout.flush()
+
+
 def main():
     ap = argparse.ArgumentParser(description="Barrido experimental EVCSPP -> CSV")
     ap.add_argument("--jobs", type=int, default=6, help="corridas en paralelo (= nucleos)")
@@ -169,14 +183,15 @@ def main():
         f.flush()
 
         futs = [ex.submit(run_one, solver, *job, args.cross, args.max_gen, args.patience) for job in jobs]
+        draw_bar(0, len(jobs), 0, start)
         for fut in as_completed(futs):
             row = fut.result()
             w.writerow(row)
             f.flush()
             done += 1
             feas += 1 if row["factible"] == "si" else 0
-            if done % max(1, len(jobs) // 20) == 0 or done == len(jobs):
-                print(f"   {done}/{len(jobs)} corridas listas...", flush=True)
+            draw_bar(done, len(jobs), feas, start)
+        print()  # cerrar la linea de la barra
 
     print(f">> Listo en {time.time() - start:.0f}s. {done} filas -> {out_path}")
     print(f">> Factibles: {feas} / {done}")
