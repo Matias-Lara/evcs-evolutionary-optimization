@@ -54,7 +54,7 @@ CSV_FIELDS = [
     "instancia", "n", "alpha", "pop", "crossover", "mutation",
     "max_gen", "patience", "seed", "gen_alcanzado", "evaluaciones",
     "fitness", "costo", "penalizacion", "nodos_construidos", "nodos_total",
-    "factible", "wall_s",
+    "factible", "wall_s", "nodos_ids",
 ]
 
 RE_FIT = re.compile(r"Fitness Total:\s*(\S+)")
@@ -62,6 +62,7 @@ RE_COST = re.compile(r"Costo Base:\s*(\S+)")
 RE_PEN = re.compile(r"Penalizacion:\s*(\S+)")
 RE_NODES = re.compile(r"Nodos construidos:\s*(\d+)/(\d+)")
 RE_GENS = re.compile(r"Generaciones ejecutadas:\s*(\d+)")
+RE_BUILT = re.compile(r"Estaciones construidas en los nodos:\s*(.*)")
 
 
 def find_solver():
@@ -100,6 +101,9 @@ def run_one(solver, inst, pop, seed, cross, max_gen, patience):
     mn = RE_NODES.search(out)
     built, total = (mn.group(1), mn.group(2)) if mn else ("", "")
     gen_run = grab(RE_GENS)           # generaciones realmente ejecutadas (parada temprana)
+    # Lista de nodos construidos -> ";" en vez de ", " para no romper el CSV y
+    # poder split() facil al graficar los MAPAS (que nodos se construyen).
+    built_ids = grab(RE_BUILT).strip().replace(", ", ";")
 
     try:
         feas = "si" if float(pen) == 0.0 else "no"
@@ -118,7 +122,7 @@ def run_one(solver, inst, pop, seed, cross, max_gen, patience):
         "gen_alcanzado": gen_run, "evaluaciones": evals,
         "fitness": fit, "costo": cost, "penalizacion": pen,
         "nodos_construidos": built, "nodos_total": total,
-        "factible": feas, "wall_s": f"{wall:.2f}",
+        "factible": feas, "wall_s": f"{wall:.2f}", "nodos_ids": built_ids,
     }
 
 

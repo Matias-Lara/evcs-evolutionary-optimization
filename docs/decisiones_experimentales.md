@@ -45,7 +45,7 @@ p.ej. `MaxStallGenerations` de MATLAB).
 así que basta un contador de generaciones consecutivas sin mejora estricta. Se
 corta cuando el contador llega a `patience` (def. 200)... **pero solo si la
 mejor solución ya es factible** (penalización = 0). Si todavía es infactible,
-sigue hasta el **tope duro `max_gen`** (def. 4000, red de seguridad). O sea:
+sigue hasta el **tope duro `max_gen`** (4000 en el barrido, 2000 en el CLI; red de seguridad). O sea:
 para por estancamiento O por tope, lo que ocurra primero, y nunca abandona
 mientras no haya encontrado al menos una solución válida.
 
@@ -61,7 +61,13 @@ Pero obliga a comparar con cuidado: NO se compara solo el costo final, porque
 una config puede llegar al mismo costo gastando mucho más. La moneda honesta
 del esfuerzo computacional es:
 
-> **evaluaciones de fitness = pop × generaciones**  (o el tiempo de reloj `wall_s`)
+> **evaluaciones de fitness = pop × generaciones**
+>
+> Es independiente del equipo y reproducible: dos PCs distintos dan el MISMO
+> número para la misma corrida. `wall_s` (tiempo de reloj) también se registra,
+> pero solo como dato secundario — depende de la máquina, el compilador y de
+> cuántas corridas vayan en paralelo, así que NO sirve para comparar de forma
+> justa. La comparación honesta se hace por evaluaciones, no por tiempo.
 
 Ejemplo: pop=20 que converge en 900 gens = 18.000 evaluaciones; pop=200 en 1600
 gens = 320.000 evaluaciones. Mismo costo final, ¡pero pop=200 trabajó ~18× más!
@@ -69,6 +75,40 @@ Un número de "costo final" suelto ocultaba eso. Por eso el CSV registra
 `gen_alcanzado` y `evaluaciones`: la figura **costo final vs evaluaciones** (una
 línea por pop) muestra quién converge más rápido y más barato — que es
 justamente el hallazgo de "el esfuerzo, no la población, es la palanca".
+
+### Corridas factibles vs. infactibles: NO mezclarlas al promediar
+
+Una corrida puede terminar de dos formas muy distintas, y eso cambia qué
+significa su número de evaluaciones:
+
+1. **Encontró solución factible** (penalización 0) y cortó por estancamiento.
+   Aquí `evaluaciones` = el esfuerzo real que le costó LLEGAR a la solución.
+   Este número sí es comparable: mide velocidad de convergencia.
+
+2. **Nunca encontró factible** y agotó el tope `max_gen`. Aquí `evaluaciones`
+   siempre vale lo mismo (`pop × max_gen`), porque gastó TODO el presupuesto.
+   Ese número NO mide "lo que costó resolver"; mide "se rindió tras gastarlo todo
+   sin resolver". Es un techo fijo, no un esfuerzo de convergencia.
+
+**Por qué importa:** si promedias `evaluaciones` (o `costo`) mezclando los dos
+casos, el promedio no significa nada — estás mezclando "lo resolví en 18.000"
+con "me rendí a las 320.000". Ejemplo concreto: en una celda (α, pop) con 5
+seeds, si 3 fueron factibles y 2 no, promediar las 5 ensucia el resultado con
+dos corridas que ni siquiera resolvieron el problema.
+
+**Regla práctica para los gráficos** — para cada celda (α, pop) reportar DOS
+cosas por separado:
+
+- **Tasa de factibilidad**: cuántas de las 5 seeds llegaron a factible (p.ej.
+  3/5). Responde "¿qué tan confiable es esta configuración?". Se calcula con la
+  columna `factible`.
+- **Costo y evaluaciones**: promediados SOLO sobre las corridas factibles de esa
+  celda (filtrar `factible == "si"` antes de promediar). Responde "cuando
+  resuelve, ¿qué tan bueno y qué tan rápido es?".
+
+Así cada métrica dice una cosa limpia: la tasa de factibilidad habla de "qué tan
+seguido resuelve"; el costo/evaluaciones habla de "qué tan bien y rápido resuelve
+cuando resuelve". Nunca se contaminan entre sí.
 
 ## Qué NO se barre y por qué
 
