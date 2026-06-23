@@ -30,6 +30,9 @@ results/
 # PDFs generados (no subir, se regeneran con pdflatex)
 *.pdf
 
+# Entorno virtual de Python (graficos: pandas/matplotlib)
+.venv/
+
 # Editor
 .vscode/
 *.swp

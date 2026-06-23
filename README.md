@@ -49,6 +49,22 @@ python run_sweep.py    # grilla por defecto: alpha x pop x 5 seeds -> results/sw
 Ver [docs/decisiones_experimentales.md](docs/decisiones_experimentales.md) para la
 justificación del diseño (qué se barre, qué se fija y por qué).
 
+## Gráficos
+
+Las figuras del informe se generan desde el CSV del barrido. A diferencia del
+barrido, esto sí necesita dependencias externas (`pandas`, `matplotlib`), así que
+se usa un entorno virtual:
+
+```
+python3 -m venv .venv
+source .venv/bin/activate
+pip install pandas matplotlib
+python graficos.py        # genera figuras/*.png a partir de results/sweep_reales.csv
+```
+
+Produce tres figuras en `figuras/`: costo vs evaluaciones (esfuerzo) por alpha,
+mapa de la mejor solución factible, y factibilidad/costo vs alpha.
+
 ## Estructura
 
 ```
@@ -57,5 +73,7 @@ EVCS_Instancias/     Instancias (pequeñas, grandes, reales y variantes de alpha
 docs/                Decisiones experimentales
 presentaciones/      Presentaciones (presentacion1, presentacion2)
 run_sweep.py         Barrido experimental -> results/*.csv
+graficos.py          Figuras del informe (lee el CSV) -> figuras/*.png
+figuras/             Figuras generadas
 Makefile
 ```
