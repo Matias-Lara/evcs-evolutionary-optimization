@@ -30,16 +30,11 @@ void Solution::evaluate() {
         }
     }
 
-    // Calcular Penalizaciones
-    // Un peso muy grande para forzar al algoritmo a preferir siempre soluciones factibles
-    double penalty_weight = 1e9; 
+    // Penalizaciones con un peso grande para descartar soluciones infactibles
+    double penalty_weight = 1e9;
 
-    // RESTRICCION 1: Accesibilidad (Segun el Informe/Paper)
-    // x_i + x_j >= 1 para todo (i,j) en \bar{E}
-    
-    // NOTA: AQUI SE PODRIA PROGRAMAR LA RESTRICCIÓN RELAJADA
-    
-    // Programamos tal cual esta en el paper quatum simulated annealing
+    // RESTRICCION 1: Accesibilidad
+    // x_i + x_j >= 1 para todo par (i,j) de aristas validas
     for (int i = 0; i < n; ++i) {
         for (int j = i + 1; j < n; ++j) {
             if (instance->isValidEdge(i, j)) { // Distancia entre alpha*R y R
@@ -55,10 +50,8 @@ void Solution::evaluate() {
     for (int j = 0; j < n; ++j) {
         double provided_capacity = 0;
         for (int i = 0; i < n; ++i) {
-            // Evaluamos si la estacion 'i' puede proveer a la zona 'j'.
-            // Vecindad V_j^{alpha R}: estaciones a distancia ENTRE alpha*R y R de j
-            // (banda), con i != j -> EXCLUYE al propio nodo j, fiel al paper
-            // Ou et al. 2025 (Tabla I y ec. 7). isValidEdge ya garantiza i != j.
+            // La estacion i aporta a la zona j si esta a distancia entre alpha*R
+            // y R (isValidEdge ya excluye i == j, no se cuenta la propia zona)
             if (instance->isValidEdge(i, j)) {
                 if (chromosome[i] == 1) {
                     provided_capacity += instance->nodes[i].capacity; // Sumamos f_i
@@ -95,7 +88,6 @@ void Solution::evaluate() {
         penalty += penalty_weight;
     }
 
-    // El fitness final que el algoritmo intentara minimizar
-    // Un fitness menor siempre sera mejor.
+    // Fitness a minimizar: costo mas penalizaciones
     fitness = cost + penalty;
 }

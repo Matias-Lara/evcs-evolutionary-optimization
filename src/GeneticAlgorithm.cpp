@@ -34,9 +34,7 @@ void GeneticAlgorithm::initializePopulation() {
 }
 
 Solution GeneticAlgorithm::rouletteWheelSelection() {
-    // Al ser un problema de MINIMIZACIÓN, la ruleta debe favorecer a los que tienen MENOR fitness.
-    // Una forma clásica es invertir el fitness.
-    
+    // Es minimizacion: la ruleta debe favorecer el menor fitness, asi que lo invertimos.
     double max_fitness = 0;
     for (const auto& sol : population) {
         if (sol.fitness > max_fitness) {
@@ -47,8 +45,8 @@ Solution GeneticAlgorithm::rouletteWheelSelection() {
     double sum_inverted_fitness = 0;
     vector<double> inverted_fitness(pop_size);
     for (int i = 0; i < pop_size; ++i) {
-        // Distancia hacia el máximo fitness. Le sumamos 1 para asegurar que nunca haya probabilidad 0.
-        inverted_fitness[i] = (max_fitness - population[i].fitness) + 1.0; 
+        // Distancia al peor fitness, +1 para que nadie quede con probabilidad 0
+        inverted_fitness[i] = (max_fitness - population[i].fitness) + 1.0;
         sum_inverted_fitness += inverted_fitness[i];
     }
     
@@ -104,13 +102,10 @@ void GeneticAlgorithm::run() {
     cout << "--- Iniciando Algoritmo Genetico ---" << endl;
     initializePopulation();
 
-    // Criterio de parada: contador de generaciones consecutivas SIN mejora.
-    // Con elitismo el mejor fitness es monotono (nunca empeora), asi que basta
-    // un contador: se resetea ante cualquier mejora estricta y se corta cuando
-    // llega a 'patience'... pero SOLO si ya hay solucion factible. Si todavia es
-    // infactible, se sigue hasta el tope duro 'max_generations'.
+    // 'stall' cuenta generaciones seguidas sin mejora; se corta al llegar a
+    // 'patience', pero solo si la mejor solucion ya es factible.
     int stall = 0;
-    generations_run = max_generations;  // valor si se agota el tope sin cortar antes
+    generations_run = max_generations;
 
     for (int gen = 0; gen < max_generations; ++gen) {
         vector<Solution> new_population;
@@ -168,10 +163,7 @@ void GeneticAlgorithm::run() {
         // Reemplazo generacional
         population = new_population;
 
-        // ----- CRITERIO DE PARADA -----
-        // Cortar si llevamos 'patience' generaciones sin mejorar Y la mejor
-        // solucion ya es factible (penalizacion == 0). Mientras siga infactible
-        // no cortamos: dejamos que agote el tope buscando factibilidad.
+        // Parada: 'patience' generaciones sin mejora y solucion ya factible
         if (best_solution.penalty == 0.0 && stall >= patience) {
             generations_run = gen + 1;  // gen es 0-indexado: contamos esta generacion
             cout << "Parada temprana: " << patience << " generaciones sin mejora (solucion factible)." << endl;
