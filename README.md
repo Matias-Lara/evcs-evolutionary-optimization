@@ -43,7 +43,7 @@ infactible, corre hasta `max_gen`. La semilla efectiva se imprime para reproduci
 ## Barrido experimental
 
 ```
-python run_sweep.py    # grilla por defecto: alpha x pop x 5 seeds -> results/sweep_reales.csv
+python scripts/run_sweep.py    # grilla por defecto: alpha x pop x 5 seeds -> results/sweep_reales.csv
 ```
 
 Ver [docs/decisiones_experimentales.md](docs/decisiones_experimentales.md) para la
@@ -59,7 +59,7 @@ se usa un entorno virtual:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install pandas matplotlib
-python graficos.py        # genera figuras/*.png a partir de results/sweep_reales.csv
+python scripts/graficos.py        # genera figuras/*.png a partir de results/sweep_reales.csv
 ```
 
 Produce tres figuras en `figuras/`: costo vs evaluaciones (esfuerzo) por alpha,
@@ -73,8 +73,9 @@ EVCS_Instancias/     Instancias (pequeñas, grandes, reales y variantes de alpha
 docs/                Decisiones experimentales
 presentaciones/      Presentaciones (presentacion1, presentacion2; son similares,
                      falta actualizar presentacion2 a futuro)
-run_sweep.py         Barrido experimental -> results/*.csv
-graficos.py          Figuras del informe (lee el CSV) -> figuras/*.png
+scripts/             Scripts de Python
+  run_sweep.py       Barrido experimental -> results/*.csv
+  graficos.py        Figuras del informe (lee el CSV) -> figuras/*.png
 figuras/             Figuras generadas
 Makefile
 ```

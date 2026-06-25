@@ -11,7 +11,7 @@ Genera las 3 figuras del informe a partir de results/sweep_reales.csv.
 
 Requiere el venv con pandas+matplotlib:
     source .venv/bin/activate
-    python graficos.py
+    python scripts/graficos.py
 """
 import glob
 import os
@@ -22,7 +22,7 @@ matplotlib.use("Agg")            # backend sin display: solo escribe archivos
 import matplotlib.pyplot as plt
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent   # el script vive en scripts/, la raiz del repo esta un nivel arriba
 CSV = ROOT / "results" / "sweep_reales.csv"
 OUTDIR = ROOT / "figuras"
 ALPHAS_FACTIBLES = ["0", "0.05", "0.10"]   # las que tienen solucion (ver auditoria)
@@ -184,7 +184,7 @@ def fig_factibilidad_vs_alpha(df):
 
 def main():
     if not CSV.exists():
-        raise SystemExit(f"No existe {CSV}. Corre primero: python run_sweep.py")
+        raise SystemExit(f"No existe {CSV}. Corre primero: python scripts/run_sweep.py")
     OUTDIR.mkdir(exist_ok=True)
     df = cargar()
     for fn in (fig_costo_vs_evals, fig_mapa, fig_factibilidad_vs_alpha):

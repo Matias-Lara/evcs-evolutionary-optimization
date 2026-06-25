@@ -10,7 +10,7 @@ build/
 evcs_solver
 evcs_solver.exe
 
-# Resultados de barridos (se regeneran con run_sweep.py)
+# Resultados de barridos (se regeneran con scripts/run_sweep.py)
 results/
 
 # LaTeX auxiliares
@@ -32,6 +32,8 @@ results/
 
 # Entorno virtual de Python (graficos: pandas/matplotlib)
 .venv/
+__pycache__/
+*.pyc
 
 # Editor
 .vscode/

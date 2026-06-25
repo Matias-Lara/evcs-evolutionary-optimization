@@ -1,4 +1,4 @@
-# Decisiones experimentales del barrido (run_sweep.py)
+# Decisiones experimentales del barrido (scripts/run_sweep.py)
 
 Justificación de qué se barre, qué se fija, y por qué — para usar al escribir
 la sección de metodología/diseño experimental del informe.
@@ -140,7 +140,7 @@ metodología.
    el mismo comando. Si estuviera hardcodeado en el código fuente, "reproducir"
    implicaría rastrear qué commit tenía qué valor.
 3. **Separación de responsabilidades.** El binario C++ es un solver genérico;
-   el diseño del experimento (qué barrer, en qué rango) vive en `run_sweep.py`.
+   el diseño del experimento (qué barrer, en qué rango) vive en `scripts/run_sweep.py`.
    El solver no necesita saber nada del experimento, y el barrido se puede
    rediseñar sin tocar ni recompilar el C++.
 

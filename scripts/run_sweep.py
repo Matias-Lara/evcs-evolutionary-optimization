@@ -18,8 +18,8 @@ si usara pandas/matplotlib, pero la generacion del CSV corre tal cual.
 
 Uso:
     make                       # compilar el solver primero
-    python run_sweep.py        # grilla por defecto (alpha x pop x 5 seeds = 250 corridas)
-    python run_sweep.py --jobs 6 --pops 10,20,50,100,200 --seeds 1,2,3,4,5 --max-gen 4000 --patience 200
+    python scripts/run_sweep.py        # grilla por defecto (alpha x pop x 5 seeds = 250 corridas)
+    python scripts/run_sweep.py --jobs 6 --pops 10,20,50,100,200 --seeds 1,2,3,4,5 --max-gen 4000 --patience 200
 
 En Windows (MSYS2 UCRT64): mismo comando.
 El barrido es vergonzosamente paralelo: --jobs = nro de nucleos (p.ej. 6 en un i5-10400F).
@@ -34,7 +34,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent   # el script vive en scripts/, la raiz del repo esta un nivel arriba
 
 # Instancias: 2 reales x 5 alphas. alpha=0 usa el original; el resto, las variantes.
 INSTANCES = [
