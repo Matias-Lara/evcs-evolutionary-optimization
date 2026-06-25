@@ -71,7 +71,8 @@ mapa de la mejor solución factible, y factibilidad/costo vs alpha.
 src/                 Código fuente C++ (GA, instancia, solución, main)
 EVCS_Instancias/     Instancias (pequeñas, grandes, reales y variantes de alpha)
 docs/                Decisiones experimentales
-presentaciones/      Presentaciones (presentacion1, presentacion2)
+presentaciones/      Presentaciones (presentacion1, presentacion2; son similares,
+                     falta actualizar presentacion2 a futuro)
 run_sweep.py         Barrido experimental -> results/*.csv
 graficos.py          Figuras del informe (lee el CSV) -> figuras/*.png
 figuras/             Figuras generadas
