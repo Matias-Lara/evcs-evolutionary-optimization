@@ -182,15 +182,92 @@ def fig_factibilidad_vs_alpha(df):
     return out
 
 
+# ---------------------------------------------------------------------------
+# Figura 4: costo vs pop_size con barras de error (afinamiento de la poblacion)
+# ---------------------------------------------------------------------------
+def fig_costo_vs_pop(df):
+    fac = df[df["factible"] == "si"]
+    fig, ax = plt.subplots(figsize=(7.5, 5))
+    for a in ALPHAS_FACTIBLES:
+        sub = fac[fac["alpha"] == a]
+        g = sub.groupby("pop")["costo"].agg(["mean", "std"]).reset_index().sort_values("pop")
+        # Normalizamos por el mejor costo medio de ese alpha (1.0 = mejor pop):
+        # cada alpha tiene su propia escala, asi los tres caben en un eje comparable.
+        base = g["mean"].min()
+        y = g["mean"] / base
+        yerr = g["std"].fillna(0) / base       # std en la misma escala normalizada
+        ax.errorbar(g["pop"], y, yerr=yerr, marker="o", capsize=4, lw=1.6,
+                    label=f"alpha={a}")
+    ax.axhline(1.0, color="gray", ls="--", lw=0.8, alpha=0.6)
+    ax.set_xscale("log")
+    ax.set_xticks([10, 20, 50, 100, 200])
+    ax.set_xticklabels(["10", "20", "50", "100", "200"])
+    ax.set_xlim(8, 250)
+    ax.minorticks_off()
+    ax.set_xlabel("Poblacion  (pop_size, escala log)")
+    ax.set_ylabel("Costo relativo  (1.0 = mejor pop de cada alpha)")
+    ax.set_title("Afinamiento de pop_size: costo relativo segun la poblacion")
+    ax.legend()
+    ax.grid(True, which="major", ls=":", alpha=0.5)
+    fig.tight_layout()
+    out = OUTDIR / "costo_vs_pop.png"
+    fig.savefig(out, dpi=150); plt.close(fig)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Figura 5: costo y esfuerzo (evaluaciones) vs pop_size en doble eje
+# ---------------------------------------------------------------------------
+def fig_costo_y_esfuerzo_vs_pop(df, alpha="0.10"):
+    # Un alpha factible representativo: con alpha=0.10 el costo crece de forma
+    # clara con la poblacion, asi se ve el doble argumento contra pop grande.
+    fac = df[(df["factible"] == "si") & (df["alpha"] == alpha)]
+    g = fac.groupby("pop").agg(
+        costo_mean=("costo", "mean"), costo_std=("costo", "std"),
+        ev_mean=("evaluaciones", "mean"), ev_std=("evaluaciones", "std"),
+    ).reset_index().sort_values("pop")
+
+    fig, ax1 = plt.subplots(figsize=(7.5, 5))
+    c1, c2 = "#1f77b4", "#d62728"
+    eb1 = ax1.errorbar(g["pop"], g["costo_mean"], yerr=g["costo_std"].fillna(0),
+                       marker="o", capsize=4, lw=1.8, color=c1)
+    ax1.set_xscale("log")
+    ax1.set_xticks([10, 20, 50, 100, 200])
+    ax1.set_xticklabels(["10", "20", "50", "100", "200"])
+    ax1.set_xlim(8, 250)
+    ax1.set_xlabel("Poblacion  (pop_size, escala log)")
+    ax1.set_ylabel("Costo de la solucion", color=c1)
+    ax1.tick_params(axis="y", labelcolor=c1)
+
+    ax2 = ax1.twinx()
+    eb2 = ax2.errorbar(g["pop"], g["ev_mean"], yerr=g["ev_std"].fillna(0),
+                       marker="s", ls="--", capsize=4, lw=1.8, color=c2)
+    ax2.set_ylabel("Esfuerzo: evaluaciones de fitness", color=c2)
+    ax2.tick_params(axis="y", labelcolor=c2)
+
+    best_pop = int(g.loc[g["costo_mean"].idxmin(), "pop"])
+    ax1.axvline(best_pop, color="gray", ls=":", lw=1.0, alpha=0.7)
+    ax1.minorticks_off(); ax2.minorticks_off()
+    ax1.legend([eb1, eb2], ["Costo", "Evaluaciones (esfuerzo)"], loc="upper left")
+    ax1.set_title(f"Costo y esfuerzo computacional segun pop_size (instancia real, alpha={alpha}):\n"
+                  f"pop_size={best_pop} minimiza ambos")
+    fig.tight_layout()
+    out = OUTDIR / "costo_y_esfuerzo_vs_pop.png"
+    fig.savefig(out, dpi=150); plt.close(fig)
+    return out
+
+
 def main():
     if not CSV.exists():
         raise SystemExit(f"No existe {CSV}. Corre primero: python scripts/run_sweep.py")
     OUTDIR.mkdir(exist_ok=True)
     df = cargar()
-    for fn in (fig_costo_vs_evals, fig_mapa, fig_factibilidad_vs_alpha):
+    figuras = (fig_costo_vs_evals, fig_costo_vs_pop, fig_costo_y_esfuerzo_vs_pop,
+               fig_mapa, fig_factibilidad_vs_alpha)
+    for fn in figuras:
         out = fn(df)
         print(f">> {os.path.relpath(out, ROOT)}")
-    print(">> Listo. 3 figuras en figuras/")
+    print(f">> Listo. {len(figuras)} figuras en figuras/")
 
 
 if __name__ == "__main__":
