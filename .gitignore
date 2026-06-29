@@ -45,5 +45,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Material del curso provisto (instrucciones y rubrica de la entrega), no es trabajo propio
-desarollando_informe_entrega2/instrucciones_e2/
+# Material del curso provisto (instrucciones, plantillas, rubricas, reglas), no es trabajo propio
+docs_entregables/e2_instrucciones/
+instrucciones_generales/
