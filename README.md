@@ -62,8 +62,15 @@ pip install pandas matplotlib
 python scripts/graficos.py        # genera figuras/*.png a partir de results/sweep_reales.csv
 ```
 
-Produce tres figuras en `figuras/`: costo vs evaluaciones (esfuerzo) por alpha,
-mapa de la mejor solución factible, y factibilidad/costo vs alpha.
+Produce cinco figuras en `figuras/`:
+
+- `costo_vs_evaluaciones.png`: costo vs esfuerzo (evaluaciones) por tamaño de población.
+- `mapa_solucion.png`: mapa de la mejor solución factible (estaciones construidas,
+  candidatos no construidos y nodos remotos).
+- `factibilidad_vs_alpha.png`: trade-off costo/factibilidad y la frontera de
+  infactibilidad por construcción a partir de alpha=0.15.
+- `costo_vs_pop.png`: afinamiento de pop_size, costo relativo según la población.
+- `costo_y_esfuerzo_vs_pop.png`: costo y esfuerzo según la población para alpha=0.10.
 
 ## Estructura
 
@@ -76,6 +83,7 @@ presentaciones/      Presentaciones (presentacion1, presentacion2; son similares
 scripts/             Scripts de Python
   run_sweep.py       Barrido experimental -> results/*.csv
   graficos.py        Figuras del informe (lee el CSV) -> figuras/*.png
-figuras/             Figuras generadas
+results/             Salida del barrido (sweep_reales.csv)
+figuras/             Figuras generadas (5 PNG)
 Makefile
 ```
