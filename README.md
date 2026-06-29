@@ -46,8 +46,53 @@ infactible, corre hasta `max_gen`. La semilla efectiva se imprime para reproduci
 python scripts/run_sweep.py    # grilla por defecto: alpha x pop x 5 seeds -> results/sweep_reales.csv
 ```
 
-Ver [docs/decisiones_experimentales.md](docs/decisiones_experimentales.md) para la
-justificación del diseño (qué se barre, qué se fija y por qué).
+## Diseño del barrido
+
+Justificación de qué se varía, qué se fija y por qué (metodología experimental).
+
+**Dos ejes barridos:**
+
+- **alpha** (`0, 0.05, 0.10, 0.15, 0.20`): no es un hiperparámetro del GA sino un parámetro
+  del *problema*; regula la dureza de la restricción de demanda (el anillo `[alpha*R, R]`). Es
+  el eje central, porque muestra el trade-off costo/factibilidad a medida que la instancia se
+  endurece (a partir de `alpha=0.15` se vuelve infactible por construcción).
+- **Tamaño de población** (`10, 20, 50, 100, 200`): el único hiperparámetro del GA que se
+  barre, porque no tiene un valor óptimo universal. El hallazgo es que una población pequeña
+  iguala o supera a una grande gastando mucho menos esfuerzo.
+
+**Semillas como réplica:** cada celda `(alpha, pop)` se corre con 5 semillas (no es un eje,
+es metodología obligatoria en un algoritmo estocástico). Los resultados se agregan como media
+y desviación estándar, y la tasa de factibilidad (k/5) se reporta por separado.
+
+**Criterio de parada:** estancamiento (`patience` generaciones sin mejora), pero solo si la
+mejor solución ya es factible; si sigue infactible, corre hasta el tope duro `max_gen`. Como
+`fitness = costo + penalización`, un único contador cubre las dos fases (primero bajar la
+penalización hasta ser factible, luego bajar el costo).
+
+**Esfuerzo = evaluaciones = `pop x generaciones`.** Es la moneda honesta de comparación:
+independiente de la máquina y reproducible, a diferencia del tiempo de reloj. Con parada
+temprana cada corrida termina en una generación distinta, así que comparar solo el costo final
+ocultaría que una configuración pudo gastar mucho más cómputo para llegar al mismo punto.
+
+**Factibles vs. infactibles:** no se mezclan al promediar. El costo y las evaluaciones se
+promedian solo sobre las corridas factibles (una corrida infactible agota `pop x max_gen` sin
+resolver, y ese número no mide convergencia); la confiabilidad se mide aparte con la tasa de
+factibilidad.
+
+**Lo que NO se barre (se fija con respaldo en la literatura):**
+
+- **Mutación = `1/n`**: tasa cuasi-óptima para cromosomas binarios (Bäck 1993; Mühlenbein
+  1992), no un valor arbitrario.
+- **Crossover = `0.9`**: práctica estándar (rango habitual entre 0.6 y 0.9); se fija por
+  presupuesto experimental, no por una fórmula cerrada.
+- **Generaciones**: ya no es un parámetro a elegir, lo decide el criterio de parada
+  (`patience` + `max_gen`).
+
+Los parámetros del GA son configurables por línea de comandos (no están hardcodeados): así no
+hay que recompilar por cada combinación, cualquier corrida se reproduce con su semilla, y el
+solver (genérico) queda separado del diseño del experimento (en `scripts/run_sweep.py`).
+También se evaluó y descartó la inicialización *greedy* (compra velocidad de convergencia, no
+calidad final confiablemente mejor), por lo que se mantiene la inicialización aleatoria.
 
 ## Gráficos
 
@@ -75,15 +120,32 @@ Produce cinco figuras en `figuras/`:
 ## Estructura
 
 ```
-src/                 Código fuente C++ (GA, instancia, solución, main)
-EVCS_Instancias/     Instancias (pequeñas, grandes, reales y variantes de alpha)
-docs/                Decisiones experimentales
-presentaciones/      Presentaciones (presentacion1, presentacion2; son similares,
-                     falta actualizar presentacion2 a futuro)
-scripts/             Scripts de Python
-  run_sweep.py       Barrido experimental -> results/*.csv
-  graficos.py        Figuras del informe (lee el CSV) -> figuras/*.png
-results/             Salida del barrido (sweep_reales.csv)
-figuras/             Figuras generadas (5 PNG)
-Makefile
+.
+├── src/                          # Código fuente C++ (solver)
+│   ├── GeneticAlgorithm.cpp
+│   ├── GeneticAlgorithm.h
+│   ├── Instance.cpp
+│   ├── Instance.h
+│   ├── main.cpp
+│   ├── Solution.cpp
+│   └── Solution.h
+├── EVCS_Instancias/              # Instancias del problema
+│   ├── Instancia_real/           #   reales, N=100 (las usadas en el barrido)
+│   ├── Instancias_alpha/         #   variantes con distinto alpha
+│   ├── Instancias_grandes/
+│   └── Instancias_pequenas/
+├── scripts/
+│   ├── run_sweep.py              # Barrido experimental  -> results/*.csv
+│   └── graficos.py               # Figuras desde el CSV  -> figuras/*.png
+├── results/
+│   └── sweep_reales.csv          # Salida del barrido (se regenera)
+├── figuras/                      # Figuras generadas (5 PNG)
+├── docs_entregables/             # Entregables del curso
+│   ├── e1_informe/               #   informe E1 (PDF)
+│   ├── e2_informe/               #   informe E2 (fuente LaTeX + figuras)
+│   ├── e2_instrucciones/         #   material provisto E2 (no versionado)
+│   └── presentaciones/           #   p1 y p2 (beamer) + rubrica
+├── instrucciones_generales/      # Reglas y paper de referencia (no versionado)
+├── Makefile
+└── README.md
 ```
