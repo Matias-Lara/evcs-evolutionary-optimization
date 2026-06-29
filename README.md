@@ -141,7 +141,7 @@ Produce cinco figuras en `figuras/`:
 │   └── sweep_reales.csv          # Salida del barrido (se regenera)
 ├── figuras/                      # Figuras generadas (5 PNG)
 ├── docs_entregables/             # Entregables del curso
-│   ├── e1_informe/               #   informe E1 (PDF)
+│   ├── e1_informe/               #   informe E1 (fuente LaTeX + figuras)
 │   ├── e2_informe/               #   informe E2 (fuente LaTeX + figuras)
 │   ├── e2_instrucciones/         #   material provisto E2 (no versionado)
 │   └── presentaciones/           #   p1 y p2 (beamer) + rubrica
