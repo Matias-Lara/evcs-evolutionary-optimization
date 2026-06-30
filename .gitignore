@@ -10,8 +10,7 @@ build/
 evcs_solver
 evcs_solver.exe
 
-# Resultados de barridos (se regeneran con scripts/run_sweep.py)
-results/
+# Los CSV de barridos (results/) ahora se versionan como registro reproducible.
 
 # LaTeX auxiliares
 *.aux
