@@ -18,7 +18,7 @@ si usara pandas/matplotlib, pero la generacion del CSV corre tal cual.
 
 Uso:
     make                       # compilar el solver primero
-    python scripts/run_sweep.py        # grilla por defecto (alpha x pop x 5 seeds = 250 corridas)
+    python scripts/run_sweep.py        # grilla por defecto (25 inst x 5 pops x 5 seeds = 625 corridas)
     python scripts/run_sweep.py --jobs 6 --pops 10,20,50,100,200 --seeds 1,2,3,4,5 --max-gen 4000 --patience 200
 
 En Windows (MSYS2 UCRT64): mismo comando.
@@ -36,18 +36,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent   # el script vive en scripts/, la raiz del repo esta un nivel arriba
 
-# Instancias: 2 reales x 5 alphas. alpha=0 usa el original; el resto, las variantes.
+# Instancias: 5 reales (S71-S75) x 5 alphas. alpha=0 usa el original; el resto,
+# las variantes (solo cambia el campo alpha del header). 5 x 5 = 25 instancias.
+_SEEDS_REALES = ["S71", "S72", "S73", "S74", "S75"]
 INSTANCES = [
-    "EVCS_Instancias/Instancia_real/evcsReal_N100_A0_S71.txt",
-    "EVCS_Instancias/Instancias_alpha/real/evcsReal_N100_A0.05_S71.txt",
-    "EVCS_Instancias/Instancias_alpha/real/evcsReal_N100_A0.10_S71.txt",
-    "EVCS_Instancias/Instancias_alpha/real/evcsReal_N100_A0.15_S71.txt",
-    "EVCS_Instancias/Instancias_alpha/real/evcsReal_N100_A0.20_S71.txt",
-    "EVCS_Instancias/Instancia_real/evcsReal_N100_A0_S72.txt",
-    "EVCS_Instancias/Instancias_alpha/real/evcsReal_N100_A0.05_S72.txt",
-    "EVCS_Instancias/Instancias_alpha/real/evcsReal_N100_A0.10_S72.txt",
-    "EVCS_Instancias/Instancias_alpha/real/evcsReal_N100_A0.15_S72.txt",
-    "EVCS_Instancias/Instancias_alpha/real/evcsReal_N100_A0.20_S72.txt",
+    p
+    for s in _SEEDS_REALES
+    for p in (
+        f"EVCS_Instancias/Instancia_real/evcsReal_N100_A0_{s}.txt",
+        f"EVCS_Instancias/Instancias_alpha/real/evcsReal_N100_A0.05_{s}.txt",
+        f"EVCS_Instancias/Instancias_alpha/real/evcsReal_N100_A0.10_{s}.txt",
+        f"EVCS_Instancias/Instancias_alpha/real/evcsReal_N100_A0.15_{s}.txt",
+        f"EVCS_Instancias/Instancias_alpha/real/evcsReal_N100_A0.20_{s}.txt",
+    )
 ]
 
 CSV_FIELDS = [
