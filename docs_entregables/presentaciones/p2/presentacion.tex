@@ -12,6 +12,7 @@
 \usetikzlibrary{arrows.meta, shapes.geometric, positioning, calc}
 \usepackage{listings}
 \usepackage{microtype}
+\usepackage{enumitem}
 
 \usepackage[sfdefault, light]{FiraSans}
 \usepackage[lining]{FiraMono}
@@ -77,109 +78,58 @@
 \newcommand{\gris}[1]{\textcolor{GrisAzul}{#1}}
 
 \title{EVCSPP: Optimización Evolutiva de\\Estaciones de Carga para VE}
-\subtitle{Estado de Avance --- Presentación 1}
+\subtitle{Presentación Final}
 \author{Matias Lara Plaza}
 \institute{Inteligencia Artificial $\cdot$ 2026-1}
 \date{Junio 2026}
 
 \begin{document}
 
+% =====  1. PORTADA  =====
 \maketitle
 
+% =====  2. AGENDA  =====
 \begin{frame}{Contenido}
   \setbeamertemplate{section in toc}[sections numbered]
   \tableofcontents
 \end{frame}
 
 % ============================================================
-\section{Contexto y Problema}
+\section{El Problema}
 % ============================================================
 
-\begin{frame}{El Problema: EVCSPP}
-  \begin{columns}
+% =====  3. ENCUADRE MÍNIMO (comprimido de 3 slides a 1)  =====
+\begin{frame}{Encuadre: el problema EVCSPP}
+  \begin{columns}[T]
     \column{0.55\textwidth}
     \begin{itemize}
-      \item Los VE reducen emisiones de CO$_2$, pero generan \alert{``range anxiety''}
-      \item Solución: red de estaciones \textbf{estratégicamente ubicada}
-      \item \textbf{EVCSPP}: elegir \emph{qué nodos} alojan estaciones, minimizando costo total
+      \item \textbf{EVCSPP}: elegir \emph{qué nodos} de una red alojan estaciones de carga, minimizando el costo total de construcción.
+      \item Formalmente \alert{NP-duro} \gris{[Lam et al., 2014]}: $2^n$ soluciones para $n$ ubicaciones candidatas.
     \end{itemize}
-    \vspace{0.3em}
-    \begin{block}{Complejidad}
-      Formalmente \alert{NP-duro} \gris{[Lam et al., 2014]}. Para $n$ ubicaciones candidatas existen $2^n$ soluciones posibles.
-    \end{block}
-    \column{0.42\textwidth}
-    \begin{center}
-    \begin{tikzpicture}[scale=0.9,
-      nodo/.style    ={circle,draw=GrisAzul,fill=NavyFrame,text=BlancoCool,minimum size=0.65cm,font=\scriptsize},
-      estacion/.style={circle,draw=Verde,fill=Verde!20,text=BlancoCool,minimum size=0.65cm,font=\scriptsize,line width=1.5pt}]
-      \node[nodo]     (A) at (0,2.0){A};
-      \node[estacion] (B) at (2,2.8){B};
-      \node[nodo]     (C) at (3.2,1.2){C};
-      \node[estacion] (D) at (0.8,0) {D};
-      \node[estacion] (E) at (3.5,2.8){E};
-      \node[nodo]     (F) at (0.3,3.3){F};
-      \foreach \u/\v in {A/B,B/C,C/E,A/D,D/C,B/E,F/B,F/A}
-        \draw[GrisAzul,thin] (\u)--(\v);
-      \node[Verde,font=\tiny]    at (1.8,-0.55){\acento{Estaciones seleccionadas}};
-      \node[GrisAzul,font=\tiny] at (1.8,-0.95){No seleccionados};
-    \end{tikzpicture}
-    \end{center}
-  \end{columns}
-\end{frame}
-
-\begin{frame}{Notación: Parámetros del Problema}
-  \begin{center}
-  \renewcommand{\arraystretch}{1.25}
-  \begin{tabular}{|c|l|}
-    \hline
-    \multicolumn{2}{|c|}{\textbf{Tabla de parámetros}} \\
-    \hline
-    $C_i$       & Costo de construir estación en ubicación $i$ \\
-    $R$         & Distancia de autonomía promedio de autos eléctricos \\
-    $d(i,j)$    & Distancia entre nodos $i,\,j$ \\
-    $s_i$       & Rango de servicio de nodo $i$ \\
-    $D_i$       & Demanda en el nodo $i$ \\
-    $f_i$       & Poder de carga en el nodo $i$ \\
-    $CityArea$  & Área de la ciudad que se debe cubrir \\
-    \hline
-  \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}{Modelo Matemático \gris{(Ou et al., 2025)}}
-  \begin{columns}
-    \column{0.50\textwidth}
-    \textbf{Variable de decisión:}
-    \[
-      x_j = \begin{cases}1 & \text{construir estación en }j\\0 & \text{caso contrario}\end{cases}
-    \]
-    \vspace{0.1em}
+    \vspace{0.4em}
     \textbf{Función objetivo:}
-    \[
-      \min \sum_{j=1}^{n} C_j \cdot x_j
-    \]
-    \acentob{$C_j$}: costo de construcción en $j$
-    \column{0.48\textwidth}
-    \textbf{Sujeto a 4 restricciones:}
-    \vspace{0.5em}
-    \begin{itemize}
-      \item[\acento{R1}] \textbf{Accesibilidad}
-      \vspace{0.15em}
-      \item[\acento{R2}] \textbf{Demanda}
-      \vspace{0.15em}
-      \item[\acento{R3}] \textbf{Cobertura urbana}
-      \vspace{0.15em}
-      \item[\acento{R4}] \textbf{Zonas remotas}
-    \end{itemize}
-    \vspace{0.6em}
-    {\footnotesize\gris{Cada una se desarrolla a continuación con su modelo matemático e implementación.}}
+    \[ \min \sum_{j=1}^{n} C_j \cdot x_j, \qquad x_j \in \{0,1\} \]
+    \gris{\footnotesize $x_j = 1$: se construye estación en el nodo $j$; $C_j$ es su costo.}
+
+    \column{0.43\textwidth}
+    \begin{block}{Sujeto a 4 restricciones}
+      \begin{itemize}\footnotesize
+        \item[\acento{R1}] Accesibilidad
+        \item[\acento{R2}] Demanda (anillo $[\alpha R,\,R]$)
+        \item[\acento{R3}] Cobertura urbana
+        \item[\acento{R4}] Zonas remotas
+      \end{itemize}
+    \end{block}
+    \vspace{0.3em}
+    \gris{\scriptsize El modelo y el manejo de las restricciones se detallan en la sección siguiente.}
   \end{columns}
 \end{frame}
 
 % ============================================================
-\section{Representación y Restricciones}
+\section{Propuesta}
 % ============================================================
 
+% =====  4. REPRESENTACIÓN (reusada)  =====
 \begin{frame}[fragile]{Representación: Cromosoma Binario}
   \begin{columns}[T]
     \column{0.47\textwidth}
@@ -224,9 +174,10 @@ public:
   \end{columns}
 \end{frame}
 
+% =====  5. RESTRICCIONES (comprimido de 3 slides a 1)  =====
 \begin{frame}{Manejo de Restricciones: Penalidades}
   \begin{columns}[T]
-    \column{0.50\textwidth}
+    \column{0.46\textwidth}
     \textbf{Estrategia:} restricciones $\rightarrow$ penalidades aditivas
     {\setlength\abovedisplayskip{3pt}\setlength\belowdisplayskip{3pt}
     \[
@@ -236,203 +187,45 @@ public:
     \]
     }
     Con $\lambda = 10^9 \gg$ cualquier costo real.
-    \vspace{0.2em}
+    \vspace{0.3em}
     \begin{block}{Por qué funciona}
-      \begin{itemize}\footnotesize
-        \item Infactible $\Rightarrow$ fitness $\gg$ factible
-        \item No se eliminan infactibles
-        \item R2: penalidad proporcional al déficit
-      \end{itemize}
+      \footnotesize Toda solución infactible queda con fitness $\gg$ que cualquier factible, sin necesidad de descartarla. R2 penaliza proporcional al déficit.
     \end{block}
 
-    \column{0.48\textwidth}
-    \textbf{Las 4 penalidades implementadas:}
+    \column{0.52\textwidth}
+    \textbf{Las 4 restricciones:}
     \vspace{0.3em}
     \begin{itemize}\footnotesize
-      \item \acento{R1} \textbf{Accesibilidad:}\\
-        $+\lambda$ por cada par $(i,j)$ sin cobertura mutua
+      \item[\acento{R1}] \textbf{Accesibilidad:} $\;x_i + x_j \geq 1 \quad \forall(i,j)\in\bar{E}$
       \vspace{0.25em}
-      \item \acento{R2} \textbf{Demanda:}\\
-        $+\lambda\cdot(D_j - \text{cap}_j)$ por déficit de demanda
+      \item[\acento{R2}] \textbf{Demanda:} $\;\sum_{i\in V_j^{\alpha R}} f_i\,x_i \geq D_j$ \\
+        \gris{\scriptsize anillo $V_j^{\alpha R}=\{i : \alpha R \le d(i,j) \le R\}$}
       \vspace{0.25em}
-      \item \acento{R3} \textbf{Cobertura urbana:}\\
-        $+\lambda\cdot(\textit{CityArea} - \text{cobertura})$
+      \item[\acento{R3}] \textbf{Cobertura urbana:} $\;\sum_{j} s_j\,x_j \geq \textit{CityArea}$
       \vspace{0.25em}
-      \item \acento{R4} \textbf{Zonas remotas:}\\
-        $+\lambda$ si ninguna zona remota tiene estación
+      \item[\acento{R4}] \textbf{Zonas remotas:} $\;\sum_{j\in T} x_j \geq 1$
     \end{itemize}
   \end{columns}
 \end{frame}
 
-\begin{frame}[fragile]{Restricciones R1 y R2: Modelo e Implementación}
-  \setlength\abovedisplayskip{3pt}\setlength\belowdisplayskip{3pt}
-  \begin{columns}[T]
-    \column{0.50\textwidth}
-    \acento{R1} \textbf{Accesibilidad}\\
-    {\footnotesize Todo par de nodos a distancia válida debe tener al menos una estación.}
-    \[ x_i + x_j \geq 1 \quad \forall(i,j)\in\bar{E} \]
-    \begin{lstlisting}[numbers=none]
-for (int i=0; i<n; ++i)
- for (int j=i+1; j<n; ++j)
-  if (instance->isValidEdge(i,j))
-   if (!chromosome[i]&&!chromosome[j])
-    penalty += W;
-    \end{lstlisting}
-
-    \column{0.48\textwidth}
-    \acento{R2} \textbf{Demanda}\\
-    {\footnotesize Estaciones en el anillo $[\alpha R,\,R]$ alrededor del nodo $j$ deben cubrir su demanda $D_j$.}
-    \[ \sum_{i\in V_j^{\alpha R}} f_i\,x_i \geq D_j \]
-    \begin{lstlisting}[numbers=none]
-for (int j=0; j<n; ++j) {
- double cap = 0;
- for (int i=0; i<n; ++i)
-  if (instance->isValidEdge(i,j)
-      && chromosome[i])
-   cap += instance->nodes[i].capacity;
- if (cap < instance->nodes[j].demand)
-  penalty += W*(instance->nodes[j].demand-cap);
-}
-    \end{lstlisting}
-  \end{columns}
-\end{frame}
-
-\begin{frame}[fragile]{Restricciones R3 y R4: Modelo e Implementación}
-  \setlength\abovedisplayskip{3pt}\setlength\belowdisplayskip{3pt}
-  \begin{columns}[T]
-    \column{0.50\textwidth}
-    \acento{R3} \textbf{Cobertura Urbana}\\
-    {\footnotesize Los rangos de servicio de las estaciones deben sumar al menos \textit{CityArea}.}
-    \[ \sum_{j} s_j\,x_j \geq \textit{CityArea} \]
-    \begin{lstlisting}[numbers=none]
-double cov = 0;
-for (int j=0; j<n; ++j)
- if (chromosome[j])
-  cov += instance->nodes[j].service_range;
-if (cov < instance->city_area)
- penalty += W*(instance->city_area-cov);
-    \end{lstlisting}
-
-    \column{0.48\textwidth}
-    \acento{R4} \textbf{Zonas Remotas}\\
-    {\footnotesize Al menos una estación en el conjunto de zonas remotas $T$.}
-    \[ \sum_{j\in T} x_j \geq 1 \]
-    \begin{lstlisting}[numbers=none]
-int remote = 0;
-for (int j=0; j<n; ++j)
- if (instance->nodes[j].is_remote
-     && chromosome[j])
-  remote++;
-if (remote < 1)
- penalty += W;
-    \end{lstlisting}
-  \end{columns}
-\end{frame}
-
-% ============================================================
-\section{Lectura de Instancias}
-% ============================================================
-
-\begin{frame}[fragile]{Lectura y Almacenamiento de Instancias}
-  \begin{columns}[T]
-    \column{0.44\textwidth}
-    \textbf{Formato del archivo \texttt{.txt}:}
-    \begin{lstlisting}[language={},numbers=none]
-n_nodos R alpha CityArea
-6 250 0.05 100
-ID Costo Demanda Potencia Rango Remoto
-0  3258492 3227 2766 24 0
-1  2630136  132 1267 79 1
-...
-Matriz_Distancias
--1.00  5.20  8.42 ...
- 5.20 -1.00  6.78 ...
-Coordenadas
-2.509  1.909
-0.461  6.685
-    \end{lstlisting}
-    \vspace{-0.1em}
-    \textbf{Conjuntos de instancias:}
-    \begin{itemize}\footnotesize
-      \item \acento{Pequeñas}: $N\in\{6,8,10\}$ (15 inst.)
-      \item \acentob{Grandes}: $N\in\{100,200,300\}$ (15 inst.)
-      \item \gris{Real}: $N=100$, datos reales (5 inst.)
-    \end{itemize}
-
-    \column{0.54\textwidth}
-    \textbf{Estructura interna (\texttt{Instance.h}):}
-    \begin{lstlisting}
-struct Node {
-  int    id;
-  double cost;          // C_j
-  double demand;        // D_j
-  double capacity;      // f_i
-  double service_range; // s_j
-  int    is_remote;     // pertenece a T
-  double x, y;
-};
-
-class Instance {
-public:
-  int    n_nodes;
-  double R, alpha, city_area;
-
-  vector<Node>           nodes;
-  vector<vector<double>> dist_matrix;
-
-  Instance(const string& filename);
-  bool isValidEdge(int i, int j) const;
-};
-    \end{lstlisting}
-  \end{columns}
-\end{frame}
-
-% ============================================================
-\section{Algoritmo Genético}
-% ============================================================
-
-\begin{frame}[fragile]{Solución Inicial: Generación Aleatoria}
-  \begin{columns}[T]
-    \column{0.50\textwidth}
-    \textbf{¿Por qué aleatoria?}
-    \begin{itemize}\footnotesize
-      \item Máxima \alert{diversidad} en la población inicial
-      \item Sin sesgo que limite la exploración
-      \item El GA converge desde cualquier punto de partida
-    \end{itemize}
-    \vspace{0.05em}
-    \textbf{Proceso:}
-    \begin{enumerate}\footnotesize
-      \item Cada gen: bit aleatorio $\in \{0,1\}$ (\texttt{mt19937})
-      \item Evaluar la solución generada
-      \item Repetir para \texttt{pop\_size} = 50 individuos
-    \end{enumerate}
-
-    \column{0.48\textwidth}
-    \textbf{Línea clave} \gris{(\texttt{Solution::randomize})}:
-    \vspace{0.3em}
-    \begin{lstlisting}[numbers=none]
-// bit aleatorio 0 o 1 por cada nodo
-chromosome[i] = bit(rng);
-    \end{lstlisting}
-    \vspace{0.4em}
-    \begin{block}{Generador \texttt{mt19937}}
-      \footnotesize Mersenne Twister: alta calidad estadística, semilla basada en el reloj del sistema para resultados distintos en cada ejecución.
-    \end{block}
-  \end{columns}
-\end{frame}
-
+% =====  6. FLUJO DEL GA  =====
 \begin{frame}{El Algoritmo Genético: Flujo Completo}
   \begin{columns}[T]
     \column{0.52\textwidth}
-    \vspace{1.8em}
     \begin{block}{Parámetros implementados}
-      \begin{tabular}{ll}
-        \acentob{pop\_size}        & 50 individuos \\
-        \acentob{crossover\_rate}  & 0.8           \\
-        \acentob{mutation\_rate}   & 0.05 por gen  \\
-        \acentob{max\_generations} & 100           \\
+      \footnotesize
+      \begin{tabular}{@{}ll@{}}
+        \acentob{pop\_size}       & eje del barrido $\{10,...,200\}$ \\
+        \acentob{crossover\_rate} & 0.9 (uniforme) \\
+        \acentob{mutation\_rate}  & $1/n$ por gen \\
+        \acentob{criterio parada} & estancamiento \\
+                                   & (\texttt{patience}$=200$) o \\
+                                   & \texttt{max\_gen}$=4000$ \\
       \end{tabular}
+    \end{block}
+    \vspace{0.5em}
+    \begin{block}{Por qué ese criterio de parada}
+      \scriptsize El estancamiento corta apenas el GA deja de mejorar (ahorra cómputo); el tope \texttt{max\_gen} evita ciclos sin fin cuando nunca se alcanza factibilidad ($\alpha$ alto).
     \end{block}
 
     \column{0.45\textwidth}
@@ -450,303 +243,245 @@ chromosome[i] = bit(rng);
       \node[caja]  (eval)  at (0, 4.1){Evaluar fitness de la población};
       \node[cajae] (elit)  at (0, 3.2){Elitismo: copiar el mejor directo};
       \node[caja]  (sel)   at (0, 2.3){Selección por Ruleta ($\times$2)};
-      \node[caja]  (cross) at (0, 1.4){Cruce Uniforme ($p_c = 0.8$)};
-      \node[caja]  (mut)   at (0, 0.5){Mutación Bit-flip ($p_m = 0.05$)};
+      \node[caja]  (cross) at (0, 1.4){Cruce Uniforme ($p_c = 0.9$)};
+      \node[caja]  (mut)   at (0, 0.5){Mutación Bit-flip ($p_m = 1/n$)};
       \node[caja]  (rep)   at (0,-0.4){Reemplazar generación};
       \foreach \a/\b in {ini/eval,eval/elit,elit/sel,sel/cross,cross/mut,mut/rep}
         \draw[fl] (\a)--(\b);
       \draw[-Stealth,Cian,thick]
-        (rep.east)--++(0.65,0)--++(0,4.6)--(eval.east)
-        node[midway,right,font=\tiny,Cian]{100\,gen.};
+        (rep.east)--++(0.35,0)--++(0,4.6)
+        node[pos=0.5,right=2pt,font=\tiny,Cian]{patience/max\_gen}
+        --(eval.east);
     \end{tikzpicture}
     \end{center}
   \end{columns}
 \end{frame}
 
-% ============================================================
-\section{Movimientos del GA}
-% ============================================================
-
-\begin{frame}[fragile]{Movimiento I: Selección por Ruleta}
-  Adaptada a \textbf{minimización} invirtiendo el fitness:
-  {\setlength\abovedisplayskip{3pt}\setlength\belowdisplayskip{3pt}
-  \[
-    \tilde{f}_i = (\max_k f_k - f_i) + 1
-    \qquad
-    P(\text{seleccionar }i) = \frac{\tilde{f}_i}{\sum_k \tilde{f}_k}
-  \]
-  }
-  \vspace{-0.5em}
-  \begin{columns}[T]
-    \column{0.40\textwidth}
-    \begin{center}
-    \begin{tikzpicture}[scale=0.65]
-      \fill[Verde!55]    (0,0)--(2,0) arc(0:130:2)  --cycle;
-      \fill[Cian!55]     (0,0)--(2,0) arc(0:-90:2)  --cycle;
-      \fill[GrisAzul!40] (0,0)--({2*cos(270)},{2*sin(270)}) arc(270:180:2)--cycle;
-      \fill[AlertRed!30] (0,0)--({2*cos(130)},{2*sin(130)}) arc(130:180:2)--cycle;
-      \node[font=\scriptsize,Verde]    at ( 0.6, 0.9){A (mejor)};
-      \node[font=\scriptsize,Cian]     at ( 0.7,-0.7){B};
-      \node[font=\scriptsize,GrisAzul] at (-0.9,-0.5){C};
-      \node[font=\scriptsize,AlertRed] at (-0.7, 0.5){D};
-    \end{tikzpicture}
-    \end{center}
-    \vspace{0.1em}
-    El \acento{mejor individuo} ocupa el mayor sector.
-
-    \column{0.58\textwidth}
-    \textbf{Línea clave} \gris{(\texttt{rouletteWheelSelection})}:
-    \vspace{0.3em}
-    \begin{lstlisting}[numbers=none]
-// fitness bajo -> inv alto -> mayor sector
-inv[i] = (max_f - pop[i].fitness) + 1.0;
-    \end{lstlisting}
-    \vspace{0.4em}
-    \begin{block}{¿Por qué \texttt{+1.0}?}
-      \footnotesize Evita que el mejor individuo quede con $\tilde{f}_i=0$ y probabilidad de selección nula.
-    \end{block}
-  \end{columns}
-\end{frame}
-
-\begin{frame}[fragile]{Movimiento II: Cruce Uniforme}
-  Cada gen del hijo elige de qué padre heredar con $p=0.5$, de forma \textbf{independiente}:
-  \vspace{0.2em}
-  \begin{center}
-  \begin{tikzpicture}[scale=0.85]
-    \foreach \i/\v in {0/1,1/0,2/1,3/0,4/1,5/0}
-      \node[draw=Cian!60,fill=CodeBg,minimum size=0.65cm,font=\small,text=BlancoCool]
-        at (\i*0.83,1.15) {\v};
-    \node[Cian,font=\scriptsize] at (-0.95,1.15){Padre 1};
-    \foreach \i/\v in {0/0,1/1,2/0,3/1,4/0,5/1}
-      \node[draw=GrisAzul!60,fill=CodeBg,minimum size=0.65cm,font=\small,text=BlancoCool]
-        at (\i*0.83,0.48) {\v};
-    \node[GrisAzul,font=\scriptsize] at (-0.95,0.48){Padre 2};
-    \draw[-Stealth,Cian,thick]     (0*0.83,0.84)--(0*0.83,0.07);
-    \draw[-Stealth,GrisAzul,thick] (1*0.83,0.17)--(1*0.83,0.07);
-    \draw[-Stealth,GrisAzul,thick] (2*0.83,0.17)--(2*0.83,0.07);
-    \draw[-Stealth,Cian,thick]     (3*0.83,0.84)--(3*0.83,0.07);
-    \draw[-Stealth,Cian,thick]     (4*0.83,0.84)--(4*0.83,0.07);
-    \draw[-Stealth,GrisAzul,thick] (5*0.83,0.17)--(5*0.83,0.07);
-    \foreach \i/\v in {0/1,1/1,2/0,3/0,4/1,5/1}
-      \node[draw=Verde,fill=Verde,minimum size=0.65cm,font=\small\bfseries,text=NavyBg]
-        at (\i*0.83,-0.28) {\v};
-    \node[Verde,font=\scriptsize] at (-0.95,-0.28){Hijo 1};
-  \end{tikzpicture}
-  \end{center}
-  \vspace{0.15em}
-  \begin{columns}[T]
-    \column{0.52\textwidth}
-    \textbf{Línea clave} \gris{(\texttt{uniformCrossover})}:
-    \begin{lstlisting}[numbers=none]
-// por cada gen, moneda 50/50:
-if (dist(rng) < 0.5) // intercambiar
-  child1[i] = parent2[i];
-else                  // heredar directo
-  child1[i] = parent1[i];
-    \end{lstlisting}
-    \column{0.46\textwidth}
-    \begin{block}{¿Por qué uniforme?}
-      \footnotesize Cualquier combinación de genes de ambos padres es posible. Sin sesgo posicional a diferencia del cruce de 1 punto.
-    \end{block}
-  \end{columns}
-\end{frame}
-
-\begin{frame}[fragile]{Movimiento III: Mutación Bit-flip y Elitismo}
-  \begin{columns}[T]
-    \column{0.50\textwidth}
-    \textbf{\acentob{Mutación Bit-flip} ($p_m = 0.05$)}\\[0.2em]
-    Cada gen se niega \emph{independientemente} con probabilidad $p_m$:
-    \vspace{0.15em}
-    \begin{center}
-    \begin{tikzpicture}[scale=0.82]
-      \foreach \i/\v in {0/1,1/0,2/0,3/1,4/1}
-        \node[draw=Cian!60,fill=CodeBg,minimum size=0.62cm,font=\small,text=BlancoCool]
-          at (\i*0.78,0.60) {\v};
-      \node[GrisAzul,font=\tiny] at (-0.62,0.60){Antes:};
-      \node[draw=Cian!60,fill=CodeBg,minimum size=0.62cm,font=\small,text=BlancoCool] at (0*0.78,0) {1};
-      \node[draw=Cian!60,fill=CodeBg,minimum size=0.62cm,font=\small,text=BlancoCool] at (1*0.78,0) {0};
-      \node[draw=Verde,fill=Verde,minimum size=0.62cm,font=\small\bfseries,text=NavyBg] at (2*0.78,0) {1};
-      \node[draw=Cian!60,fill=CodeBg,minimum size=0.62cm,font=\small,text=BlancoCool] at (3*0.78,0) {1};
-      \node[draw=Verde,fill=Verde,minimum size=0.62cm,font=\small\bfseries,text=NavyBg] at (4*0.78,0) {0};
-      \node[GrisAzul,font=\tiny] at (-0.62,0){Después:};
-      \draw[-Stealth,Verde,thick] (2*0.78,0.31)--(2*0.78,0.16);
-      \draw[-Stealth,Verde,thick] (4*0.78,0.31)--(4*0.78,0.16);
-      \node[Verde,font=\tiny] at (2*0.78,-0.37){flip!};
-      \node[Verde,font=\tiny] at (4*0.78,-0.37){flip!};
-    \end{tikzpicture}
-    \end{center}
-    \textbf{Línea clave} \gris{(\texttt{bitFlipMutation})}:
-    \begin{lstlisting}[numbers=none]
-if (dist(rng) < mutation_rate) // 5%
-  chromosome[i] = 1 - chromosome[i];
-    \end{lstlisting}
-
-    \column{0.48\textwidth}
-    \textbf{\acento{Elitismo} (1-best)}\\[0.2em]
-    El mejor de la generación $g$ \textbf{pasa directo} a $g{+}1$:
-    \begin{lstlisting}[numbers=none]
-// Sobrevive intacto
-new_population.push_back(best_current);
-    \end{lstlisting}
-    \vspace{0.4em}
-    \textbf{Garantía:} el fitness global \textbf{nunca empeora} entre generaciones.
-    \vspace{0.4em}
-    \begin{block}{Orden en cada generación}
-      \footnotesize
-      Elitismo $\to$ Ruleta $\times 2$ $\to$ Cruce $\to$ Bit-flip $\to$ Evaluar
-    \end{block}
-  \end{columns}
-\end{frame}
-
-\begin{frame}{Justificación del Diseño}
-  \begin{center}
-  \renewcommand{\arraystretch}{1.05}
+% =====  7. OPERADORES (comprimido: 3 movimientos + justificación en 1)  =====
+\begin{frame}{Operadores del GA y su justificación}
   \footnotesize
-  \begin{tabular}{p{2.3cm} p{3.9cm} p{3.9cm}}
-    \toprule
-    \acentob{Componente} & \acento{Motivación} & \gris{Objetivo} \\
-    \midrule
-    Ruleta invertida &
-      Presión selectiva proporcional al fitness; no monopoliza &
-      Favorecer los mejores sin perder diversidad \\
-    Cruce Uniforme &
-      Mayor mezcla que cruce de 1 punto; sin sesgo posicional &
-      Exploración amplia del espacio combinatorio \\
-    Bit-flip ($p_m{=}0.05$) &
-      Perturbación mínima y localizada por gen &
-      Escapar óptimos locales sin destruir buenas soluciones \\
-    Elitismo 1-best &
-      El mejor de cada generación siempre sobrevive &
-      El resultado nunca empeora entre generaciones \\
-    Penalidad $\lambda{=}10^9$ &
-      $\lambda \gg$ cualquier costo real &
-      Infactibles siempre peores que factibles \\
-    \bottomrule
-  \end{tabular}
-  \end{center}
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \acento{Selección: ruleta invertida}
+    {\setlength\abovedisplayskip{2pt}\setlength\belowdisplayskip{2pt}
+    \[ \tilde{f}_i = (\max_k f_k - f_i) + 1 \]}
+    \gris{Adaptada a minimización. El \texttt{+1} impide que el mejor quede con probabilidad nula. Presión selectiva sin monopolizar.}
+    \vspace{0.5em}
+
+    \acento{Cruce uniforme} ($p_c$)\\
+    \gris{Cada gen hereda de un padre con $p=0.5$, de forma independiente. Máxima mezcla y sin sesgo posicional (a diferencia del cruce de 1 punto): exploración amplia.}
+
+    \column{0.5\textwidth}
+    \acento{Mutación bit-flip} ($p_m = 1/n$)\\
+    \gris{Cada gen se niega con probabilidad $p_m$. Perturbación mínima para escapar de óptimos locales sin destruir buenas soluciones.}
+    \vspace{0.5em}
+
+    \acento{Elitismo (1-best)}\\
+    \gris{El mejor de cada generación pasa intacto a la siguiente: el fitness global nunca empeora.}
+    \vspace{0.5em}
+
+    \acento{Penalidad} $\lambda = 10^9$\\
+    \gris{$\lambda \gg$ cualquier costo real: las soluciones infactibles son siempre peores que las factibles.}
+  \end{columns}
+  \vspace{0.4em}
+  \begin{block}{Orden en cada generación}
+    \footnotesize Elitismo $\rightarrow$ Ruleta $\times 2$ $\rightarrow$ Cruce $\rightarrow$ Bit-flip $\rightarrow$ Evaluar
+  \end{block}
 \end{frame}
 
 % ============================================================
-\section{Resultados y Salida}
+\section{Recomendaciones de Estado de Avance}
 % ============================================================
 
-\begin{frame}[fragile]{Salida del Programa}
+% =====  8. RECOMENDACIONES DE ESTADO DE AVANCE  =====
+\begin{frame}{Recomendaciones de Estado de Avance}
+  \footnotesize\gris{El ayudante entregó 2 recomendaciones en la Presentación de Estado de Avance. Cada una se abordó con un experimento dedicado (siguientes diapositivas).}
+  \vspace{0.6em}
   \begin{columns}[T]
-    \column{0.50\textwidth}
-    {\small\textbf{Código de salida (\texttt{main.cpp}):}}
-    \begin{lstlisting}
-cout << "--- MEJOR SOLUCION ENCONTRADA ---\n";
-cout << "Fitness Total: "
-     << ga.best_solution.fitness << endl;
-cout << "Costo Base: "
-     << ga.best_solution.cost << endl;
-cout << "Penalizacion: "
-     << ga.best_solution.penalty << endl;
-cout << "Estaciones construidas en los nodos: ";
-bool first = true;
-for (size_t i = 0;
-     i < ga.best_solution.chromosome.size(); ++i)
-  if (ga.best_solution.chromosome[i] == 1) {
-    if (!first) cout << ", ";
-    cout << i; first = false;
-  }
-cout << endl;
-int built = 0;
-for (int x : ga.best_solution.chromosome)
-  built += x;
-cout << "Nodos construidos: " << built
-     << "/" << instance.n_nodes << endl;
-    \end{lstlisting}
+    \column{0.48\textwidth}
+    \begin{block}{\acento{1.} Tamaño de población}
+      \footnotesize
+      \textbf{Observación:} \texttt{pop\_size=50} se usaba sin respaldo experimental.
+      \vspace{0.4em}
+
+      \textbf{Qué hicimos:} barrido dedicado de \texttt{pop\_size} $\in\{10,20,50,100,200\}$, midiendo costo final y esfuerzo (evaluaciones).
+      \vspace{0.6em}
+
+      \acentob{$\rightarrow$ Experimento 1}
+    \end{block}
 
     \column{0.48\textwidth}
-    {\small\textbf{Compilación y ejecución:}}
-    \begin{lstlisting}[language=bash,numbers=none]
-$ make
-$ ./evcs_solver EVCS_Instancias/\
-  Instancias_pequenas/evcsSmall_N10_A0_S51.txt
-    \end{lstlisting}
-    {\small\textbf{Ejemplo de salida (N=10, instancia S51):}}
-    \begin{lstlisting}[language={},numbers=none]
-========================================
-Nodos: 10 | Area Ciudad: 100
-========================================
---- MEJOR SOLUCION ENCONTRADA ---
-Fitness Total: 1.36929e+07
-Costo Base: 1.36929e+07
-Penalizacion: 0
-----------------------------------------
-Estaciones construidas en los nodos:
-1, 2, 3, 4, 5, 6, 7, 8, 9
-Nodos construidos: 9/10
-========================================
-    \end{lstlisting}
-    {\scriptsize\acento{\textbf{Estado:}} \textbf{Penalidad 0} (factible) en instancias pequeñas.}
+    \begin{block}{\acento{2.} Visualización y $\alpha$}
+      \footnotesize
+      \textbf{Observación:} faltaba ver \emph{dónde} construye el GA y el efecto del parámetro $\alpha$ del problema.
+      \vspace{0.4em}
+
+      \textbf{Qué hicimos:} barrido de $\alpha \in \{0,\,0.05,\,0.10,\,0.15,\,0.20\}$ y mapa de la mejor solución factible encontrada.
+      \vspace{0.6em}
+
+      \acentob{$\rightarrow$ Experimento 2}
+    \end{block}
   \end{columns}
 \end{frame}
 
 % ============================================================
-\section{Conclusiones y Trabajo Futuro}
+\section{Experimentos y Resultados}
 % ============================================================
 
-\begin{frame}{Conclusiones y Trabajo Futuro}
+% =====  9. DISEÑO EXPERIMENTAL  =====
+\begin{frame}{Diseño Experimental}
   \begin{columns}[T]
-    \column{0.50\textwidth}
-    \acento{Lo logrado}
-    \begin{itemize}\footnotesize
-      \item[\acento{\checkmark}] GA completo en C++: Ruleta, Cruce Uniforme, Bit-flip y Elitismo
-      \item[\acento{\checkmark}] 4 restricciones manejadas por penalidades ($\lambda = 10^9$)
-      \item[\acento{\checkmark}] Soluciones factibles en instancias pequeñas ($N{=}6,8,10$)
-      \item[\acento{\checkmark}] R2 con anillo $V_j^{\alpha R}=[\alpha R,\,R]$ fiel al paper
-    \end{itemize}
+    \column{0.54\textwidth}
+    \textbf{\footnotesize Barrido de 2 ejes:} $\alpha$ (problema) $\times$ \texttt{pop\_size} (algoritmo).
+    \vspace{0.2em}
+    \begin{center}
+    \begin{tikzpicture}[font=\tiny]
+      \node[GrisAzul] at (3.05,0.95) {\texttt{pop\_size}};
+      \foreach \j/\poplbl in {0/10,1/20,2/50,3/100,4/200}{
+        \node[GrisAzul] at (\j*0.95+1.15, 0.5) {\poplbl};
+      }
+      \foreach \i/\alphalbl in {0/0,1/0.05,2/0.10,3/0.15,4/0.20}{
+        \node[GrisAzul,anchor=east] at (0.75,-\i*0.6) {$\alpha{=}\alphalbl$};
+        \foreach \j in {0,...,4}{
+          \node[draw=Cian!50,fill=CodeBg,minimum width=0.8cm,minimum height=0.48cm,text=BlancoCool]
+            at (\j*0.95+1.15, -\i*0.6) {25};
+        }
+      }
+    \end{tikzpicture}
+    \end{center}
+    \gris{\scriptsize Cada celda = 25 corridas (5 instancias $\times$ 5 semillas) $\Rightarrow$ \textbf{625 corridas} en total.}
 
-    \acentob{Desafío central}
-    \begin{itemize}\footnotesize
-      \item NP-duro: sin garantía de óptimo global
-      \item En instancias grandes el balance exploración/explotación es crítico
-    \end{itemize}
-
-    \column{0.48\textwidth}
-    \acentob{Trabajo Futuro}
-    \begin{itemize}\footnotesize
-      \item[\acentob{$\to$}] Ajustar hiperparámetros ($p_m$, $p_c$, tamaño de población) en experimentos sistemáticos
-      \item[\acentob{$\to$}] Correr instancias grandes ($N{=}100,200,300$) y datos reales
-      \item[\acentob{$\to$}] Inicialización \textbf{greedy} para comparar si mejora o empeora el resultado versus aleatoria
-      \item[\acentob{$\to$}] Variar $\alpha$: con $\alpha{=}0$ la R1 obliga a construir en casi todos los nodos; aumentarlo reduce aristas válidas y da más flexibilidad al GA
+    \column{0.43\textwidth}
+    \scriptsize
+    \begin{itemize}[itemsep=4pt,topsep=2pt,parsep=0pt,leftmargin=1.1em]
+      \item \acento{Instancias:} 5 reales \texttt{S71--S75} ($n{=}100$); mismo mapa/costos, difieren en capacidad $f_i$.
+      \item \acento{Réplicas:} 5 semillas/config. $\rightarrow$ media $\pm$ desv. estándar (robustez ante el azar del GA, no es eje).
+      \item \acento{Fijos:} \texttt{crossover}$=0.9$, \texttt{mutation}$=1/n$ (principistas, no se barren).
+      \item \acento{Término doble:} estancamiento (\texttt{patience}$=200$ si ya es factible) $+$ tope duro \texttt{max\_gen}$=4000$.
+      \item \acento{Esfuerzo:} \texttt{evaluaciones}$=$pop$\times$gen\_alcanzado, moneda honesta e independiente del hardware.
     \end{itemize}
   \end{columns}
 \end{frame}
 
+% =====  10. EXPERIMENTO 1  =====
+\begin{frame}{Experimento 1: Afinamiento del tamaño de población}
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \centering
+    \includegraphics[width=0.92\textwidth]{images/costo_vs_pop.png}\\[-0.2em]
+    \scriptsize\gris{Costo final vs. \texttt{pop\_size}}
+
+    \column{0.5\textwidth}
+    \centering
+    \includegraphics[width=0.92\textwidth]{images/costo_y_esfuerzo_vs_pop.png}\\[-0.2em]
+    \scriptsize\gris{Costo y esfuerzo vs. \texttt{pop\_size}}
+  \end{columns}
+  \footnotesize
+  \textbf{Hallazgo:} en $\alpha{=}0.10$ todas las corridas son factibles para todo \texttt{pop\_size}, pero el costo y el esfuerzo NO mejoran al crecer la población.\\[0.3em]
+  \acento{\texttt{pop\_size}$=200$ vs.\ \texttt{pop\_size}$=10$: 1.97$\times$ más caro y 16.7$\times$ más esfuerzo.}\\[0.3em]
+  \gris{$\Rightarrow$ el esfuerzo (evaluaciones), no el tamaño de la población, es la palanca real. \acentob{Óptimo práctico: \texttt{pop\_size}$\in[10,20]$.}}
+\end{frame}
+
+% =====  11. EXPERIMENTO 2  =====
+\begin{frame}{Experimento 2: Efecto de $\alpha$ en el comportamiento de la solución}
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/factibilidad_vs_alpha.png}\\[-0.3em]
+    \scriptsize\gris{Costo medio y factibilidad según $\alpha$ (625 corridas)}
+
+    \column{0.5\textwidth}
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/mapa_solucion.png}\\[-0.3em]
+    \scriptsize\gris{Solución representativa ($\alpha{=}0.10$): $47/100$ estaciones, costo $8.75\times 10^6$}
+  \end{columns}
+  \scriptsize
+  \textbf{Hallazgo:} al crecer $\alpha$ el anillo de demanda excluye estaciones cercanas y la red se vuelve más dispersa: $\alpha{=}0\!\to\!99/100$ (87.8M), $\alpha{=}0.05\!\to\!68/100$ (31.9M), $\alpha{=}0.10\!\to\!48/100$ (14.2M), todas 100\% factibles. \acento{Límite: $\alpha\geq 0.15$ es infactible por construcción (0/125)}, no por debilidad del GA.
+\end{frame}
+
+% =====  12. APORTES DE LA IMPLEMENTACIÓN  =====
+\begin{frame}{Aportes de la Implementación}
+  \begin{columns}[T]
+    \column{0.46\textwidth}
+    \footnotesize
+    \textbf{1. Detectar la frontera de factibilidad evita cómputo en vano.}\\[0.3em]
+    {\scriptsize Un chequeo analítico previo (¿la solución todo-unos satisface R2?) descarta instancias infactibles por construcción ($\alpha\geq 0.15$) sin gastar una sola generación del GA.}
+    \vspace{0.5em}
+    \begin{center}
+    \begin{tikzpicture}[font=\tiny]
+      \node[draw=Cian!50,fill=CodeBg,text=BlancoCool,rounded corners,minimum width=2.6cm,minimum height=0.5cm] (inst) {Instancia $+\ \alpha$};
+      \node[draw=Cian!50,fill=CodeBg,text=BlancoCool,rounded corners,minimum width=2.6cm,minimum height=0.5cm,below=0.45cm of inst] (check) {¿Todo-unos satisface R2?};
+      \node[draw=AlertRed!70,fill=CodeBg,text=BlancoCool,rounded corners,minimum width=2.1cm,minimum height=0.5cm,below left=0.55cm and -0.4cm of check] (no) {Descartar};
+      \node[draw=Verde!70,fill=CodeBg,text=BlancoCool,rounded corners,minimum width=2.1cm,minimum height=0.5cm,below right=0.55cm and -0.4cm of check] (si) {Correr GA};
+      \draw[-{Stealth},GrisAzul] (inst) -- (check);
+      \draw[-{Stealth},AlertRed] (check) -| node[above,pos=0.25,AlertRed]{No} (no);
+      \draw[-{Stealth},Verde] (check) -| node[above,pos=0.25,Verde]{Sí} (si);
+    \end{tikzpicture}
+    \end{center}
+
+    \column{0.5\textwidth}
+    \footnotesize
+    \textbf{2. Más población no es más calidad.}\\[0.2em]
+    {\scriptsize A diferencia de la práctica habitual de escalar \texttt{pop\_size} para mejorar resultados, demostramos lo contrario: \acento{\texttt{pop\_size}$=200$ cuesta 1.97$\times$ más y gasta 16.7$\times$ más esfuerzo que \texttt{pop\_size}$=10$, sin mejorar el costo} (Experimento 1).}
+
+    \vspace{1.6em}
+    \textbf{3. Accesible sin hardware especializado.}\\[0.2em]
+    {\scriptsize El mismo modelo que Ou et al. (2025) resuelven con \textit{digital quantum annealing} propietario, aquí se resuelve con un GA clásico en un notebook común. \gris{Sin comparación cuantitativa directa: instancias y costos propios, no coinciden con su Tabla IV.}}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+\section{Conclusiones}
+% ============================================================
+
+% =====  13. CONCLUSIONES (modificada: 3 aspectos de la rúbrica)  =====
+\begin{frame}{Conclusiones}
+  \begin{enumerate}
+    \item \acento{Dificultad del problema.}
+      {\footnotesize NP-duro ($2^n$ soluciones). Además, con $\alpha \geq 0.15$ las instancias reales se vuelven \alert{infactibles por construcción}: el anillo de demanda R2 deja a varias zonas sin capacidad suficiente.}
+      % TODO afinar con la frontera 0.11-0.14
+    \vspace{0.4em}
+    \item \acentob{Uso del algoritmo.}
+      {\footnotesize El GA resuelve bien con $\alpha$ bajo (0 a 0.10). El \textbf{esfuerzo} (generaciones $\times$ población), y no el tamaño de la población, es la palanca de calidad: \acento{\texttt{pop\_size}$=200$ cuesta 1.97$\times$ más y gasta 16.7$\times$ más esfuerzo que \texttt{pop\_size}$=10$, sin mejorar el costo}.}
+    \vspace{0.4em}
+    \item \gris{Trabajo futuro.}
+      {\footnotesize Afinar la frontera $\alpha \in [0.11, 0.14]$; comparación cuantitativa con el estado del arte; inicialización greedy frente a aleatoria.}
+  \end{enumerate}
+\end{frame}
+
+% =====  14. REFERENCIAS (reusada)  =====
 \begin{frame}{Referencias}
-  \begin{enumerate}\small
+  \begin{enumerate}\footnotesize
     \item \textcolor{BlancoCool}{C.-H. Ou, C.-C. Cheng, C.-Y. Chen, K. Bhumkittipich, S. Romphochai.}
       \gris{``Solving Optimal EV Charging Station Placement Problem Using Digital Quantum Annealing.''}
       \textit{J. Comm. and Networks}, 27(4):252--263, \textbf{2025.}
       \hfill\acento{[Paper base]}
 
-    \vspace{0.3em}
+    \vspace{0.15em}
     \item \textcolor{BlancoCool}{A.~Y.~S. Lam, Y.-W. Leung, X. Chu.}
       \gris{``EV Charging Station Placement: Formulation, Complexity, and Solutions.''}
       \textit{IEEE Trans. Smart Grid}, 5(6):2846--2856, \textbf{2014.}
       \hfill\acentob{[Formulación]}
 
-    \vspace{0.3em}
+    \vspace{0.15em}
     \item \textcolor{BlancoCool}{H.~K. Demiryürek, B. Bozali, A. Ozturk.}
       \gris{``Optimal Placement and Cost Analysis of EV Charging Stations Using Metaheuristic Optimization.''}
       \textit{Applied Sciences}, 15(21), \textbf{2025.}
 
-    \vspace{0.3em}
+    \vspace{0.15em}
     \item \textcolor{BlancoCool}{S. Basu, M. Sharma, P.~S. Ghosh.}
       \gris{``Metaheuristic Applications on Discrete Facility Location Problems: A Survey.''}
       \textit{Opsearch}, 52(3):530--561, \textbf{2015.}
   \end{enumerate}
 
-  \vspace{0.4em}
+  \vspace{0.2em}
   \begin{center}
-    \textcolor{Cian}{\rule{0.75\textwidth}{0.4pt}}\\[0.3em]
-    \gris{\small Repositorio: \texttt{evcs-evolutionary-optimization} $\cdot$ Matias Lara Plaza $\cdot$ 2026}
+    \textcolor{Cian}{\rule{0.75\textwidth}{0.4pt}}\\[0.2em]
+    \gris{\footnotesize Repositorio: \texttt{evcs-evolutionary-optimization} $\cdot$ Matias Lara Plaza $\cdot$ 2026}
   \end{center}
 \end{frame}
 
+% =====  15. CIERRE (portada repetida)  =====
 \maketitle
 
 \end{document}
